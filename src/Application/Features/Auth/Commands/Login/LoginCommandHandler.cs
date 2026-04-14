@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Features.Auth.Commands.Login;
 
-public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
+public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginInternalResult>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
@@ -20,7 +20,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         _jwtTokenService = jwtTokenService;
     }
 
-    public async Task<LoginResult> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<LoginInternalResult> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(request.Email);
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
@@ -29,12 +29,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         if (!user.IsActive)
             throw new UnauthorizedException("Account is disabled.");
 
+        await _unitOfWork.RefreshTokens.RevokeAllByUserIdAsync(user.Id);
+
         var accessToken = _jwtTokenService.GenerateAccessToken(user);
         var refreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
 
         await _unitOfWork.RefreshTokens.AddAsync(refreshToken);
         await _unitOfWork.SaveChangesAsync();
 
-        return new LoginResult(accessToken, refreshToken.Token, user.Email, user.FullName, user.Role.ToString());
+        return new LoginInternalResult(accessToken, refreshToken.Token, user.Email, user.FullName, user.Role.ToString());
     }
 }

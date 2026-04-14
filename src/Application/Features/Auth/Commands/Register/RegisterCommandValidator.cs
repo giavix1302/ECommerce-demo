@@ -15,11 +15,11 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
 
         RuleFor(x => x.FullName)
-            .MaximumLength(100).WithMessage("Full name must not exceed 100 characters.")
-            .When(x => x.FullName is not null);
+            .NotEmpty().WithMessage("Full name is required.")
+            .MaximumLength(100).WithMessage("Full name must not exceed 100 characters.");
 
         RuleFor(x => x.Phone)
-            .Matches(@"^\+?[0-9]{9,15}$").WithMessage("Phone number is not valid.")
-            .When(x => x.Phone is not null);
+            .NotEmpty().WithMessage("Phone is required.")
+            .Matches(@"^\+?[0-9]{9,15}$").WithMessage("Phone number is not valid.");
     }
 }

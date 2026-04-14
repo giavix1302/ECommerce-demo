@@ -1,4 +1,3 @@
-using System.Text.Json;
 using API.Common;
 using Application.Common.Exceptions;
 
@@ -31,24 +30,24 @@ public class ExceptionHandlingMiddleware
     {
         var (statusCode, message, errors) = exception switch
         {
-            NotFoundException ex => (StatusCodes.Status404NotFound, ex.Message, null),
-            ValidationException ex => (StatusCodes.Status422UnprocessableEntity, ex.Message, ex.Errors),
-            UnauthorizedException ex => (StatusCodes.Status401Unauthorized, ex.Message, null),
-            ConflictException ex => (StatusCodes.Status409Conflict, ex.Message, null),
-            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.", null)
+            NotFoundException ex        => (StatusCodes.Status404NotFound,              ex.Message, null),
+            ValidationException ex      => (StatusCodes.Status422UnprocessableEntity,   ex.Message, ex.Errors),
+            UnauthorizedException ex    => (StatusCodes.Status401Unauthorized,          ex.Message, null),
+            ConflictException ex        => (StatusCodes.Status409Conflict,              ex.Message, null),
+            _                           => (StatusCodes.Status500InternalServerError,   "An unexpected error occurred.", null)
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
             _logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
 
-        var response = ApiResponse<object>.Fail(message, errors);
-
-        context.Response.ContentType = "application/json";
         context.Response.StatusCode = statusCode;
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response, new JsonSerializerOptions
+        await context.Response.WriteAsJsonAsync(new
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }));
+            success = false,
+            data = (object?)null,
+            message,
+            errors
+        });
     }
 }

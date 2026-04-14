@@ -13,6 +13,7 @@ namespace API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private const string RefreshTokenCookieName = "refreshToken";
 
     public AuthController(IMediator mediator)
     {
@@ -20,30 +21,62 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterCommand command)
+    public async Task<IActionResult> Register([FromBody] RegisterCommand? command)
     {
+        if (command is null)
+            return BadRequest(ApiResponse<object?>.Fail("Request body is required."));
+
         var result = await _mediator.Send(command);
         return StatusCode(StatusCodes.Status201Created, ApiResponse<RegisterResult>.Ok(result, "Registration successful."));
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginCommand command)
+    public async Task<IActionResult> Login([FromBody] LoginCommand? command)
     {
+        if (command is null)
+            return BadRequest(ApiResponse<object?>.Fail("Request body is required."));
+
         var result = await _mediator.Send(command);
-        return Ok(ApiResponse<LoginResult>.Ok(result));
+
+        SetRefreshTokenCookie(result.RefreshToken);
+
+        var publicResult = new LoginResult(result.AccessToken, result.Email, result.FullName, result.Role);
+        return Ok(ApiResponse<LoginResult>.Ok(publicResult));
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshCommand command)
+    public async Task<IActionResult> Refresh()
     {
-        var result = await _mediator.Send(command);
-        return Ok(ApiResponse<RefreshResult>.Ok(result));
+        var refreshToken = Request.Cookies[RefreshTokenCookieName];
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return Unauthorized(ApiResponse<object?>.Fail("Refresh token is missing."));
+
+        var result = await _mediator.Send(new RefreshCommand(refreshToken));
+
+        SetRefreshTokenCookie(result.RefreshToken);
+
+        return Ok(ApiResponse<RefreshPublicResult>.Ok(new RefreshPublicResult(result.AccessToken)));
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] LogoutCommand command)
+    public async Task<IActionResult> Logout()
     {
-        await _mediator.Send(command);
+        var refreshToken = Request.Cookies[RefreshTokenCookieName];
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+            await _mediator.Send(new LogoutCommand(refreshToken));
+
+        Response.Cookies.Delete(RefreshTokenCookieName);
         return Ok(ApiResponse<object?>.Ok(null, "Logged out successfully."));
+    }
+
+    private void SetRefreshTokenCookie(string token)
+    {
+        Response.Cookies.Append(RefreshTokenCookieName, token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTimeOffset.UtcNow.AddDays(7)
+        });
     }
 }
