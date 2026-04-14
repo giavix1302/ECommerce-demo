@@ -90,3 +90,4 @@ docker-compose.override.yml
 *.log
 
 PROJECT_CONTEXT.md
+dev-guidelines.md
