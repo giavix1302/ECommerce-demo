@@ -19,9 +19,11 @@ public static class InfrastructureServiceExtensions
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-        services.AddScoped<JwtTokenService>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<DatabaseSeeder>();
 
         return services;
     }
