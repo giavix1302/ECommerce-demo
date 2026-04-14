@@ -9,6 +9,7 @@ public interface IUnitOfWork : IDisposable
     IOrderRepository Orders { get; }
     ICouponRepository Coupons { get; }
     IReviewRepository Reviews { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();

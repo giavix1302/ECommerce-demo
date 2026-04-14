@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Application.Common.Interfaces;
 using Domain.Entities;
 using Infrastructure.Settings;
 using Microsoft.Extensions.Options;
@@ -8,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Infrastructure.Services;
 
-public class JwtTokenService
+public class JwtTokenService : IJwtTokenService
 {
     private readonly JwtSettings _settings;
 
@@ -17,7 +19,7 @@ public class JwtTokenService
         _settings = settings.Value;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateAccessToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -39,5 +41,17 @@ public class JwtTokenService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public RefreshToken GenerateRefreshToken(long userId)
+    {
+        var tokenValue = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        return new RefreshToken
+        {
+            UserId = userId,
+            Token = tokenValue,
+            ExpiresAt = DateTime.UtcNow.AddDays(_settings.RefreshTokenExpiresInDays),
+        };
     }
 }

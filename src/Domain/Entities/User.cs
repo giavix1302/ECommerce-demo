@@ -21,4 +21,5 @@ public class User
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<CouponUsage> CouponUsages { get; set; } = new List<CouponUsage>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
