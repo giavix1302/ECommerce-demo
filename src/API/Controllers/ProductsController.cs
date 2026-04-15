@@ -26,11 +26,9 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetProducts(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] long? categoryId = null,
-        [FromQuery] decimal? minPrice = null,
-        [FromQuery] decimal? maxPrice = null)
+        [FromQuery] long? categoryId = null)
     {
-        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, categoryId, minPrice, maxPrice));
+        var result = await _mediator.Send(new GetProductsQuery(page, pageSize, categoryId));
         return Ok(ApiResponse<PagedResult<ProductDto>>.Ok(result));
     }
 

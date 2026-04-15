@@ -1,0 +1,25 @@
+using Domain.Interfaces;
+
+namespace Domain.Entities;
+
+public class ProductVariant : ISoftDelete
+{
+    public long Id { get; set; }
+    public long ProductId { get; set; }
+    public string? Sku { get; set; }
+    public decimal Price { get; set; }
+    public int StockQuantity { get; set; } = 0;
+    public bool IsDefault { get; set; } = false;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // ISoftDelete
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
+    // Navigation properties
+    public Product Product { get; set; } = null!;
+    public ICollection<VariantAttributeValue> AttributeValues { get; set; } = new List<VariantAttributeValue>();
+    public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+}

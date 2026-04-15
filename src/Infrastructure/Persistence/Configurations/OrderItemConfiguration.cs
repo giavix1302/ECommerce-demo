@@ -26,9 +26,15 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(oi => oi.CreatedAt).IsRequired();
 
         // Relationships
-        builder.HasOne(oi => oi.Product)
-            .WithMany(p => p.OrderItems)
-            .HasForeignKey(oi => oi.ProductId)
+        builder.HasOne(oi => oi.Variant)
+            .WithMany(v => v.OrderItems)
+            .HasForeignKey(oi => oi.VariantId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(oi => oi.PromotionRule)
+            .WithMany(pr => pr.OrderItems)
+            .HasForeignKey(oi => oi.PromotionRuleId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
     }
 }

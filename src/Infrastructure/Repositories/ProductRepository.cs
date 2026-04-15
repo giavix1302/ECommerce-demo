@@ -14,9 +14,7 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
     public async Task<(IEnumerable<Product> Items, int TotalCount)> GetPagedAsync(
         int page,
         int pageSize,
-        long? categoryId = null,
-        decimal? minPrice = null,
-        decimal? maxPrice = null)
+        long? categoryId = null)
     {
         var query = _dbSet
             .Include(p => p.Category)
@@ -26,12 +24,6 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
         if (categoryId.HasValue)
             query = query.Where(p => p.CategoryId == categoryId.Value);
 
-        if (minPrice.HasValue)
-            query = query.Where(p => p.Price >= minPrice.Value);
-
-        if (maxPrice.HasValue)
-            query = query.Where(p => p.Price <= maxPrice.Value);
-
         var totalCount = await query.CountAsync();
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -40,10 +32,4 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
 
         return (items, totalCount);
     }
-
-    public async Task<Product?> GetBySkuAsync(string sku)
-        => await _dbSet.FirstOrDefaultAsync(p => p.Sku == sku && !p.IsDeleted);
-
-    public async Task<bool> ExistsBySkuAsync(string sku)
-        => await _dbSet.AnyAsync(p => p.Sku == sku && !p.IsDeleted);
 }

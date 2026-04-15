@@ -18,17 +18,12 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
         var (items, totalCount) = await _unitOfWork.Products.GetPagedAsync(
             request.Page,
             request.PageSize,
-            request.CategoryId,
-            request.MinPrice,
-            request.MaxPrice);
+            request.CategoryId);
 
         var dtos = items.Select(p => new ProductDto(
             p.Id,
             p.Name,
             p.Description,
-            p.Price,
-            p.StockQuantity,
-            p.Sku,
             p.CategoryId,
             p.Category?.Name));
 

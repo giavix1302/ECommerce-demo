@@ -19,15 +19,8 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand>
         if (product is null || product.IsDeleted)
             throw new NotFoundException("Product", request.Id);
 
-        if (request.Sku is not null && request.Sku != product.Sku
-            && await _unitOfWork.Products.ExistsBySkuAsync(request.Sku))
-            throw new ConflictException($"SKU '{request.Sku}' already exists.");
-
         product.Name = request.Name;
         product.Description = request.Description;
-        product.Price = request.Price;
-        product.StockQuantity = request.StockQuantity;
-        product.Sku = request.Sku;
         product.CategoryId = request.CategoryId;
         product.UpdatedAt = DateTime.UtcNow;
 
