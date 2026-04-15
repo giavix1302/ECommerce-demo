@@ -89,5 +89,4 @@ docker-compose.override.yml
 ## Logs
 *.log
 
-PROJECT_CONTEXT.md
-dev-guidelines.md
+docs_dev
