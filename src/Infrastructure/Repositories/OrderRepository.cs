@@ -14,7 +14,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     public async Task<IEnumerable<Order>> GetByUserIdAsync(long userId)
         => await _dbSet
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Variant)
             .Include(o => o.Coupon)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAt)
@@ -23,7 +23,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     public async Task<Order?> GetByIdWithItemsAsync(long orderId)
         => await _dbSet
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Variant)
             .Include(o => o.Coupon)
             .FirstOrDefaultAsync(o => o.Id == orderId);
 }

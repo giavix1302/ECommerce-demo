@@ -24,9 +24,6 @@ public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, P
             product.Id,
             product.Name,
             product.Description,
-            product.Price,
-            product.StockQuantity,
-            product.Sku,
             product.CategoryId,
             product.Category?.Name);
     }

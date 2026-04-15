@@ -22,9 +22,9 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
         builder.Property(ci => ci.CreatedAt).IsRequired();
 
         // Relationships
-        builder.HasOne(ci => ci.Product)
-            .WithMany(p => p.CartItems)
-            .HasForeignKey(ci => ci.ProductId)
+        builder.HasOne(ci => ci.Variant)
+            .WithMany(v => v.CartItems)
+            .HasForeignKey(ci => ci.VariantId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

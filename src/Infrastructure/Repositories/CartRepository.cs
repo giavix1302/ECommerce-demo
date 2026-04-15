@@ -17,7 +17,7 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
     public async Task<Cart?> GetByUserIdWithItemsAsync(long userId)
         => await _dbSet
             .Include(c => c.CartItems)
-                .ThenInclude(ci => ci.Product)
+                .ThenInclude(ci => ci.Variant)
             .Include(c => c.Coupon)
             .FirstOrDefaultAsync(c => c.UserId == userId);
 }

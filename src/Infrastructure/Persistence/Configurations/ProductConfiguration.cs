@@ -19,15 +19,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(p => p.Description).HasColumnType("text");
 
-        builder.Property(p => p.Price)
-            .IsRequired()
-            .HasColumnType("decimal(15,2)");
-
-        builder.Property(p => p.StockQuantity).HasDefaultValue(0);
-
-        builder.Property(p => p.Sku).HasMaxLength(100);
-        builder.HasIndex(p => p.Sku).IsUnique().HasFilter("[sku] IS NOT NULL");
-
         builder.Property(p => p.IsDeleted).HasDefaultValue(false);
         builder.Property(p => p.DeletedAt).IsRequired(false);
 
