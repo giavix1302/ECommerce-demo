@@ -18,6 +18,12 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
         => await _dbSet
             .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Variant)
+                .ThenInclude(v => v.Product)
+
+            .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Variant)
+                .ThenInclude(v => v.AttributeValues)
+                .ThenInclude(av => av.Attribute)
             .Include(c => c.Coupon)
             .FirstOrDefaultAsync(c => c.UserId == userId);
 }
