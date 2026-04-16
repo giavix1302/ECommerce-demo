@@ -25,7 +25,10 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PagedRe
             p.Name,
             p.Description,
             p.CategoryId,
-            p.Category?.Name));
+            p.Category?.Name,
+            p.Variants.FirstOrDefault(v => v.IsDefault)?.Price,
+            p.Variants.FirstOrDefault(v => v.IsDefault)?.Sku
+            ));
 
         return new PagedResult<ProductDto>(dtos, totalCount, request.Page, request.PageSize);
     }
