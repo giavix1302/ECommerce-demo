@@ -14,5 +14,7 @@ public record ProductDto(
     string Name,
     string? Description,
     long? CategoryId,
-    string? CategoryName
+    string? CategoryName,
+    decimal? DefaultPrice,
+    string? DefaultSku
 );

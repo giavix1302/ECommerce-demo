@@ -8,4 +8,6 @@ public interface IProductRepository : IGenericRepository<Product>
         int page,
         int pageSize,
         long? categoryId = null);
+
+    Task<Product?> GetByIdWithVariantsAsync(long id);
 }

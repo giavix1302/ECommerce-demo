@@ -1,3 +1,4 @@
+using Application.Common.DTOs;
 using MediatR;
 
 namespace Application.Features.Variants.Queries.GetVariants;
@@ -14,4 +15,4 @@ public record VariantDto(
     IEnumerable<VariantAttributeDto> Attributes
 );
 
-public record VariantAttributeDto(long AttributeId, string AttributeName, string Value);
+

@@ -19,7 +19,19 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         {
             Name = request.Name,
             Description = request.Description,
-            CategoryId = request.CategoryId
+            CategoryId = request.CategoryId,
+            Variants = request.Variants.Select(v => new ProductVariant
+            {
+                Sku = v.Sku,
+                Price = v.Price,
+                StockQuantity = v.StockQuantity,
+                IsDefault = v.IsDefault,
+                AttributeValues = v.Attributes.Select(a => new VariantAttributeValue
+                {
+                    AttributeId = a.AttributeId,
+                    Value = a.Value
+                }).ToList()
+            }).ToList()
         };
 
         await _unitOfWork.Products.AddAsync(product);
