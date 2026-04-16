@@ -21,6 +21,7 @@ public static class InfrastructureServiceExtensions
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<DatabaseSeeder>();

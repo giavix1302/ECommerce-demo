@@ -30,11 +30,12 @@ public class ExceptionHandlingMiddleware
     {
         var (statusCode, message, errors) = exception switch
         {
-            NotFoundException ex        => (StatusCodes.Status404NotFound,              ex.Message, null),
-            ValidationException ex      => (StatusCodes.Status422UnprocessableEntity,   ex.Message, ex.Errors),
-            UnauthorizedException ex    => (StatusCodes.Status401Unauthorized,          ex.Message, null),
-            ConflictException ex        => (StatusCodes.Status409Conflict,              ex.Message, null),
-            _                           => (StatusCodes.Status500InternalServerError,   "An unexpected error occurred.", null)
+            NotFoundException ex => (StatusCodes.Status404NotFound, ex.Message, null),
+            BadRequestException ex => (StatusCodes.Status400BadRequest, ex.Message, null),
+            ValidationException ex => (StatusCodes.Status422UnprocessableEntity, ex.Message, ex.Errors),
+            UnauthorizedException ex => (StatusCodes.Status401Unauthorized, ex.Message, null),
+            ConflictException ex => (StatusCodes.Status409Conflict, ex.Message, null),
+            _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.", null)
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
