@@ -17,4 +17,17 @@ public class CouponRepository : GenericRepository<Coupon>, ICouponRepository
     public async Task<bool> HasUserUsedCouponAsync(long couponId, long userId)
         => await _context.CouponUsages
             .AnyAsync(cu => cu.CouponId == couponId && cu.UserId == userId);
+
+    public async Task<(IEnumerable<Coupon> Items, int TotalCount)> GetPagedAsync(int page, int pageSize)
+    {
+        var query = _dbSet.AsNoTracking().OrderByDescending(c => c.CreatedAt);
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
 }

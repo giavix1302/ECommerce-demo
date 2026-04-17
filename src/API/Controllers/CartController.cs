@@ -2,6 +2,8 @@ using API.Common;
 using Application.Features.Cart.Commands.AddToCart;
 using Application.Features.Cart.Commands.UpdateCartItem;
 using Application.Features.Cart.Queries.GetCart;
+using Application.Features.Coupon.Commands.ApplyCoupon;
+using Application.Features.Coupon.Commands.RemoveCoupon;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,5 +44,21 @@ public class CartController : ControllerBase
         var cmd = command with { CartItemId = id };
         await _mediator.Send(cmd);
         return Ok(ApiResponse<object?>.Ok(null, "Cart item updated successfully."));
+    }
+
+    [HttpPost("coupon")]
+    [Authorize]
+    public async Task<IActionResult> ApplyCoupon([FromBody] ApplyCouponCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return Ok(ApiResponse<ApplyCouponResult>.Ok(result));
+    }
+
+    [HttpDelete("coupon")]
+    [Authorize]
+    public async Task<IActionResult> RemoveCoupon()
+    {
+        await _mediator.Send(new RemoveCouponCommand());
+        return Ok(ApiResponse<object?>.Ok(null, "Coupon removed successfully."));
     }
 }
