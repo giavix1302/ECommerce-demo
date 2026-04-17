@@ -19,6 +19,7 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
             .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Variant)
                 .ThenInclude(v => v.Product)
+                .ThenInclude(p => p.Category)
 
             .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Variant)
