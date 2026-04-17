@@ -43,7 +43,7 @@ public class GetCartQueryHandler : IRequestHandler<GetCartQuery, CartDto>
         ))
        )
       ),
-      cart.Coupon != null ? new CartCouponDto(cart.Coupon.Code, 0) : null
+      cart.Coupon != null ? new CartCouponDto(cart.Coupon.Code, cart.DiscountAmount) : null
     );
   }
 }
