@@ -1,4 +1,5 @@
 using Application.Common.Interfaces;
+using Application.Common.Services;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
@@ -22,6 +23,8 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        services.AddScoped<PromotionEngineService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<DatabaseSeeder>();

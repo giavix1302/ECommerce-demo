@@ -11,6 +11,7 @@ public interface IUnitOfWork : IDisposable
     ICouponRepository Coupons { get; }
     IReviewRepository Reviews { get; }
     IRefreshTokenRepository RefreshTokens { get; }
+    IPromotionRepository Promotions { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();
