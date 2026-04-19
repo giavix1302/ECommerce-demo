@@ -1,4 +1,5 @@
 using Application.Common.Behaviours;
+using Application.Common.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,8 @@ public static class ApplicationServiceExtensions
         });
         services.AddAutoMapper(cfg => cfg.AddMaps(assembly));
         services.AddValidatorsFromAssembly(assembly);
+
+        services.AddScoped<PromotionEngineService>();
 
         return services;
     }
