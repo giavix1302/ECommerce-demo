@@ -19,6 +19,11 @@ public class DeleteCategoryCommandHandler : IRequestHandler<DeleteCategoryComman
         if (category is null)
             throw new NotFoundException("Category", request.Id);
 
+
+        var hasChildren = await _unitOfWork.Categories.HasChildCategoriesAsync(request.Id);
+        if (hasChildren)
+            throw new BadRequestException("Cannot delete a category that has child categories. Please delete or reassign child categories first.");
+
         _unitOfWork.Categories.Delete(category);
         await _unitOfWork.SaveChangesAsync();
     }

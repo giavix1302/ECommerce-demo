@@ -22,4 +22,7 @@ public class CategoryRepository : GenericRepository<Category>, ICategoryReposito
             .Include(c => c.Children)
             .Where(c => c.ParentId == null)
             .ToListAsync();
+
+    public async Task<bool> HasChildCategoriesAsync(long categoryId)
+        => await _dbSet.AnyAsync(c => c.ParentId == categoryId);
 }
