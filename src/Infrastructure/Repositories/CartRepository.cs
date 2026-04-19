@@ -14,6 +14,9 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
     public async Task<Cart?> GetByUserIdAsync(long userId)
         => await _dbSet.FirstOrDefaultAsync(c => c.UserId == userId);
 
+    public void ClearItems(Cart cart)
+        => _context.CartItems.RemoveRange(cart.CartItems);
+
     public async Task<Cart?> GetByUserIdWithItemsAsync(long userId)
         => await _dbSet
             .Include(c => c.CartItems)

@@ -30,4 +30,6 @@ public class CouponRepository : GenericRepository<Coupon>, ICouponRepository
         return (items, totalCount);
     }
 
+    public async Task AddUsageAsync(CouponUsage usage)
+        => await _context.CouponUsages.AddAsync(usage);
 }

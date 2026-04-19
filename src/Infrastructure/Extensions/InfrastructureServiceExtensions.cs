@@ -24,8 +24,6 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-        services.AddScoped<PromotionEngineService>();
-
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<DatabaseSeeder>();
 

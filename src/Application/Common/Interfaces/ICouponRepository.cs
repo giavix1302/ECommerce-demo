@@ -8,4 +8,5 @@ public interface ICouponRepository : IGenericRepository<Coupon>
     Task<bool> HasUserUsedCouponAsync(long couponId, long userId);
 
     Task<(IEnumerable<Coupon> Items, int TotalCount)> GetPagedAsync(int page, int pageSize);
+    Task AddUsageAsync(CouponUsage usage);
 }
