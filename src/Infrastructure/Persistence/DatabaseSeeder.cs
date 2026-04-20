@@ -29,7 +29,7 @@ public class DatabaseSeeder
     public async Task SeedAsync()
     {
         await SeedAdminAsync();
-        await SeedCategoriesAsync();
+        // await SeedCategoriesAsync();
     }
 
     private async Task SeedAdminAsync()

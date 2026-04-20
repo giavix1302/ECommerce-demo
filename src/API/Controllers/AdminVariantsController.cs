@@ -22,9 +22,12 @@ public class AdminVariantsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetByProduct([FromQuery] long productId)
+    public async Task<IActionResult> GetByProduct([FromQuery] long? productId)
     {
-        var result = await _mediator.Send(new GetVariantsQuery(productId));
+        if (productId is null or <= 0)
+            return BadRequest(ApiResponse<object?>.Fail("productId is required."));
+
+        var result = await _mediator.Send(new GetVariantsQuery(productId.Value));
         return Ok(ApiResponse<IEnumerable<VariantDto>>.Ok(result));
     }
 
