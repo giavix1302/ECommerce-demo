@@ -1,6 +1,9 @@
 using System.Text;
+using System.Text.Json;
 using API.Middleware;
 using Application.Extensions;
+using Hangfire;
+using Hangfire.SqlServer;
 using Infrastructure.Extensions;
 using Infrastructure.Persistence;
 using Infrastructure.Settings;
@@ -13,6 +16,13 @@ var builder = WebApplication.CreateBuilder(args);
 // --- Services ---
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHangfireServer();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers()
@@ -106,6 +116,12 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.UseHangfireDashboard("/hangfire");
+RecurringJob.AddOrUpdate<Application.Features.Payment.Jobs.ExpiredPaymentJob>(
+    "expire-payos-orders",
+    job => job.ExecuteAsync(),
+    "*/5 * * * *");
 
 // --- Database Seeding ---
 using (var scope = app.Services.CreateScope())

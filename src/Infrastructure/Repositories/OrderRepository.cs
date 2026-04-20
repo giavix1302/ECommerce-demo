@@ -23,6 +23,33 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
+    public async Task<Order?> GetByIdWithItemsForUpdateAsync(long orderId)
+        => await _dbSet
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Variant)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+    public async Task<PaymentTransaction?> GetPaymentTransactionByOrderCodeAsync(long orderCode)
+        => await _context.PaymentTransactions
+            .FirstOrDefaultAsync(pt => pt.PayOSOrderCode == orderCode);
+
+    public void UpdatePaymentTransaction(PaymentTransaction transaction)
+        => _context.PaymentTransactions.Update(transaction);
+
+    public async Task<PaymentTransaction?> GetPaymentTransactionByOrderIdAsync(long orderId)
+        => await _context.PaymentTransactions
+            .FirstOrDefaultAsync(pt => pt.OrderId == orderId);
+
+    public async Task<IEnumerable<Order>> GetExpiredPayOSOrdersAsync()
+        => await _dbSet
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Variant)
+            .Include(o => o.PaymentTransactions)
+            .Where(o => o.PaymentMethod == Domain.Enums.PaymentMethod.PAYOS
+                     && o.PaymentStatus == Domain.Enums.PaymentStatus.UNPAID
+                     && o.PaymentExpiredAt < DateTime.UtcNow)
+            .ToListAsync();
+
     public async Task AddOrderItemAsync(OrderItem item)
         => await _context.OrderItems.AddAsync(item);
 

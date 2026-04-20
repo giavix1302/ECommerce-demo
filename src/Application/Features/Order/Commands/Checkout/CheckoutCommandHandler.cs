@@ -13,15 +13,18 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly PromotionEngineService _promotionEngine;
+    private readonly IPaymentService _paymentService;
 
     public CheckoutCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        PromotionEngineService promotionEngine)
+        PromotionEngineService promotionEngine,
+        IPaymentService paymentService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _promotionEngine = promotionEngine;
+        _paymentService = paymentService;
     }
 
     public async Task<CheckoutResult> Handle(CheckoutCommand request, CancellationToken cancellationToken)
@@ -100,6 +103,8 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
 
         var totalAmount = baseAmount - rankDiscountAmount - couponDiscount;
 
+        long orderId = 0;
+
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -140,7 +145,8 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
                 PaymentExpiredAt = paymentExpiredAt,
             };
             await _unitOfWork.Orders.AddAsync(order);
-            await _unitOfWork.SaveChangesAsync();   // flush để có order.Id
+            await _unitOfWork.SaveChangesAsync();
+            orderId = order.Id;
 
             // 10. Tạo OrderItems
             var orderItems = cart.CartItems.Select(ci => new OrderItem
@@ -197,27 +203,45 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
             // COD: TODO Task 8 — gọi Ahamove API tạo Shipment
             if (request.PaymentMethod == PaymentMethod.COD)
             {
-                return new CheckoutResult(order.Id, PaymentLink: null);
+                return new CheckoutResult(orderId, PaymentLink: null);
             }
 
-            // PayOS: tạo PaymentTransaction + payment link
-            // TODO: Task 7 — gọi PayOS API lấy payment link thật
-            await _unitOfWork.Orders.AddPaymentTransactionAsync(new PaymentTransaction
+            // PayOS step 1: tạo PaymentTransaction PENDING trong transaction
+            var pendingTransaction = new PaymentTransaction
             {
-                OrderId = order.Id,
-                PayOSOrderCode = order.Id,      // tạm dùng OrderId, Task 7 sẽ dùng mã PayOS thật
+                OrderId = orderId,
+                PayOSOrderCode = orderId,
                 Amount = totalAmount,
                 Status = PaymentTransactionStatus.PENDING,
-            });
+            };
+            await _unitOfWork.Orders.AddPaymentTransactionAsync(pendingTransaction);
             await _unitOfWork.SaveChangesAsync();
-
-            // Task 7 sẽ trả về URL thật từ PayOS SDK
-            return new CheckoutResult(order.Id, PaymentLink: null);
         }
         catch
         {
             await _unitOfWork.RollbackTransactionAsync();
             throw;
+        }
+
+        // PayOS step 2: gọi HTTP ra ngoài sau khi transaction đã commit
+        try
+        {
+            var paymentLink = await _paymentService.CreatePaymentLinkAsync(orderId, totalAmount);
+
+            var transaction = await _unitOfWork.Orders.GetPaymentTransactionByOrderIdAsync(orderId);
+            if (transaction is not null)
+            {
+                transaction.CheckoutUrl = paymentLink;
+                transaction.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Orders.UpdatePaymentTransaction(transaction);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            return new CheckoutResult(orderId, PaymentLink: paymentLink);
+        }
+        catch
+        {
+            throw new BadRequestException("Order created but failed to generate payment link. Please try again.");
         }
     }
 }

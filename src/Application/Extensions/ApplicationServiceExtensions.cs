@@ -1,5 +1,6 @@
 using Application.Common.Behaviours;
 using Application.Common.Services;
+using Application.Features.Payment.Jobs;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ public static class ApplicationServiceExtensions
         services.AddAutoMapper(cfg => cfg.AddMaps(assembly));
         services.AddValidatorsFromAssembly(assembly);
 
+        services.AddScoped<ExpiredPaymentJob>();
         services.AddScoped<PromotionEngineService>();
 
         return services;
