@@ -8,6 +8,7 @@ public class PaymentTransaction
     public long OrderId { get; set; }
     public long PayOSOrderCode { get; set; }
     public string? PaymentLinkId { get; set; }
+    public string? CheckoutUrl { get; set; }
     public decimal Amount { get; set; }
     public string? Description { get; set; }
     public string? AccountNumber { get; set; }

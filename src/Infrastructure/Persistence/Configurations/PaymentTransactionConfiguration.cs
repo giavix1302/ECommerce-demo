@@ -16,6 +16,7 @@ public class PaymentTransactionConfiguration : IEntityTypeConfiguration<PaymentT
         builder.HasIndex(pt => pt.PayOSOrderCode).IsUnique();
 
         builder.Property(pt => pt.PaymentLinkId).HasMaxLength(255).IsRequired(false);
+        builder.Property(pt => pt.CheckoutUrl).HasMaxLength(2048).IsRequired(false);
 
         builder.Property(pt => pt.Amount)
             .IsRequired()
