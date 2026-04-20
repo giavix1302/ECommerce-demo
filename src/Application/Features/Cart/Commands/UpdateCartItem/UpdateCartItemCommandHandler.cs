@@ -48,6 +48,20 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
         {
             cartItem.Quantity = request.Quantity;
         }
+
+        // Auto-remove coupon if cart is empty or subtotal drops below MinOrderValue
+        if (cart.CouponId.HasValue)
+        {
+            var newSubtotal = cart.CartItems.Sum(ci => ci.UnitPrice * ci.Quantity);
+            var coupon = await _unitOfWork.Coupons.GetByIdAsync(cart.CouponId.Value);
+
+            if (cart.CartItems.Count == 0 || (coupon is not null && newSubtotal < coupon.MinOrderValue))
+            {
+                cart.CouponId = null;
+                cart.DiscountAmount = 0;
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync();
     }
 }
