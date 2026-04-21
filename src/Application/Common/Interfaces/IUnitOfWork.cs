@@ -12,6 +12,7 @@ public interface IUnitOfWork : IDisposable
     IReviewRepository Reviews { get; }
     IRefreshTokenRepository RefreshTokens { get; }
     IPromotionRepository Promotions { get; }
+    IShipmentRepository Shipments { get; }
 
     Task<int> SaveChangesAsync();
     Task BeginTransactionAsync();

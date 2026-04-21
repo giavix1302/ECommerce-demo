@@ -19,6 +19,9 @@ public class Order
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.COD;
     public DateTime? PaymentExpiredAt { get; set; }
     public string? ShippingAddress { get; set; }
+    public string? ShippingServiceId { get; set; }
+    public double? DeliveryLat { get; set; }
+    public double? DeliveryLng { get; set; }
     public int PointsEarned { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

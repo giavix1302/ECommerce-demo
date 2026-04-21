@@ -28,10 +28,6 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
             .IsRequired()
             .HasColumnType("decimal(15,2)");
 
-        builder.Property(s => s.Distance)
-            .HasColumnType("decimal(10,2)")
-            .IsRequired(false);
-
         builder.Property(s => s.CodAmount)
             .HasColumnType("decimal(15,2)")
             .HasDefaultValue(0);
@@ -40,7 +36,6 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.Property(s => s.PickupAddress).IsRequired().HasColumnType("text");
         builder.Property(s => s.DeliveryAddress).IsRequired().HasColumnType("text");
         builder.Property(s => s.SupplierId).HasMaxLength(100).IsRequired(false);
-        builder.Property(s => s.SupplierName).HasMaxLength(255).IsRequired(false);
         builder.Property(s => s.AhamoveCreateTime).IsRequired(false);
 
         builder.Property(s => s.CreatedAt).IsRequired();

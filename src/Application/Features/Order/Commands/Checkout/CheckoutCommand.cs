@@ -5,7 +5,10 @@ namespace Application.Features.Order.Commands.Checkout;
 
 public record CheckoutCommand(
     PaymentMethod PaymentMethod,
-    string ShippingAddress,
+    string DeliveryAddress,
+    double DeliveryLat,
+    double DeliveryLng,
+    string ServiceId,               // Ahamove service: SGN-BIKE, SGN-EXPRESS, ...
     long? SelectedGiftVariantId     // required when promotion action is GIVE_GIFT
 ) : IRequest<CheckoutResult>;
 

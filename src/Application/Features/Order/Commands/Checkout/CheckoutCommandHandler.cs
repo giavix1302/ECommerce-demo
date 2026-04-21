@@ -1,10 +1,13 @@
+using Application.Common.DTOs.Ahamove;
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Common.Services;
+using Application.Features.Shipping.Queries.GetShippingFee;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Application.Features.Order.Commands.Checkout;
 
@@ -14,17 +17,23 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
     private readonly ICurrentUserService _currentUserService;
     private readonly PromotionEngineService _promotionEngine;
     private readonly IPaymentService _paymentService;
+    private readonly IAhamoveService _ahamove;
+    private readonly AhamovePickupOptions _pickup;
 
     public CheckoutCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         PromotionEngineService promotionEngine,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        IAhamoveService ahamove,
+        IOptions<AhamovePickupOptions> pickup)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _promotionEngine = promotionEngine;
         _paymentService = paymentService;
+        _ahamove = ahamove;
+        _pickup = pickup.Value;
     }
 
     public async Task<CheckoutResult> Handle(CheckoutCommand request, CancellationToken cancellationToken)
@@ -101,7 +110,10 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
                 };
         }
 
-        var totalAmount = baseAmount - rankDiscountAmount - couponDiscount;
+        // 8. Estimate shipping fee từ Ahamove
+        var shippingFee = await EstimateShippingFeeAsync(request, cancellationToken);
+
+        var totalAmount = baseAmount - rankDiscountAmount - couponDiscount + shippingFee;
 
         long orderId = 0;
 
@@ -136,12 +148,15 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
                 PromotionDiscountAmount = promotionDiscount,
                 RankDiscountAmount = rankDiscountAmount,
                 DiscountAmount = couponDiscount,
-                ShippingFee = 0,            // TODO: Task 8 — Ahamove
+                ShippingFee = shippingFee,
                 TotalAmount = totalAmount,
                 PaymentMethod = request.PaymentMethod,
                 PaymentStatus = PaymentStatus.UNPAID,
                 Status = OrderStatus.PENDING,
-                ShippingAddress = request.ShippingAddress,
+                ShippingAddress = request.DeliveryAddress,
+                ShippingServiceId = request.ServiceId,
+                DeliveryLat = request.DeliveryLat,
+                DeliveryLng = request.DeliveryLng,
                 PaymentExpiredAt = paymentExpiredAt,
             };
             await _unitOfWork.Orders.AddAsync(order);
@@ -200,9 +215,10 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
-            // COD: TODO Task 8 — gọi Ahamove API tạo Shipment
+            // COD: tạo Shipment ngay sau khi commit
             if (request.PaymentMethod == PaymentMethod.COD)
             {
+                await CreateShipmentAsync(orderId, request, totalAmount, user, cancellationToken);
                 return new CheckoutResult(orderId, PaymentLink: null);
             }
 
@@ -242,6 +258,106 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
         catch
         {
             throw new BadRequestException("Order created but failed to generate payment link. Please try again.");
+        }
+    }
+
+    private async Task<decimal> EstimateShippingFeeAsync(CheckoutCommand request, CancellationToken ct)
+    {
+        try
+        {
+            var estimateRequest = new AhamoveEstimateRequest
+            {
+                Path =
+                [
+                    new AhamoveOrderPath
+                    {
+                        Lat = _pickup.Lat,
+                        Lng = _pickup.Lng,
+                        Address = _pickup.Address,
+                        Name = _pickup.Name,
+                        Mobile = _pickup.Mobile
+                    },
+                    new AhamoveOrderPath
+                    {
+                        Lat = request.DeliveryLat,
+                        Lng = request.DeliveryLng,
+                        Address = request.DeliveryAddress,
+                        Name = string.Empty,
+                        Mobile = string.Empty
+                    }
+                ],
+                Services = [new AhamoveEstimateService { Id = request.ServiceId }]
+            };
+
+            var estimates = await _ahamove.EstimateShippingFeeAsync(estimateRequest, ct);
+            var match = estimates.FirstOrDefault(e => e.ServiceId == request.ServiceId);
+            return match is not null ? (decimal)match.TotalPrice : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private async Task CreateShipmentAsync(long orderId, CheckoutCommand request, decimal totalAmount, User user, CancellationToken ct)
+    {
+        try
+        {
+            var createRequest = new AhamoveCreateOrderRequest
+            {
+                ServiceId = request.ServiceId,
+                PaymentMethod = "CASH",
+                Path =
+                [
+                    new AhamoveOrderPath
+                    {
+                        Lat = _pickup.Lat,
+                        Lng = _pickup.Lng,
+                        Address = _pickup.Address,
+                        Name = _pickup.Name,
+                        Mobile = _pickup.Mobile
+                    },
+                    new AhamoveOrderPath
+                    {
+                        Lat = request.DeliveryLat,
+                        Lng = request.DeliveryLng,
+                        Address = request.DeliveryAddress,
+                        Name = user.FullName ?? string.Empty,
+                        Mobile = user.Phone ?? string.Empty,
+                        Cod = (long)totalAmount,
+                        TrackingNumber = orderId.ToString()
+                    }
+                ]
+            };
+
+            var response = await _ahamove.CreateOrderAsync(createRequest, ct);
+
+            if (string.IsNullOrEmpty(response.Id))
+                return;
+
+            var shipment = new Shipment
+            {
+                OrderId = orderId,
+                AhamoveOrderId = response.Id,
+                Status = Domain.Enums.ShipmentStatus.ASSIGNING,
+                ServiceId = response.ServiceId,
+                TotalFee = response.TotalPay,
+                CodAmount = totalAmount,
+                SharedLink = response.SharedLink,
+                PickupAddress = _pickup.Address,
+                DeliveryAddress = request.DeliveryAddress,
+                SupplierId = response.SupplierId,
+                AhamoveCreateTime = response.OrderTime > 0
+                    ? DateTimeOffset.FromUnixTimeSeconds((long)response.OrderTime).UtcDateTime
+                    : null
+            };
+
+            await _unitOfWork.Shipments.AddAsync(shipment);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch
+        {
+            // silent — order is already committed
         }
     }
 }

@@ -1,20 +1,31 @@
+using Application.Common.DTOs.Ahamove;
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
+using Application.Features.Shipping.Queries.GetShippingFee;
+using Domain.Entities;
 using Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Application.Features.Payment.Commands.ProcessPayOSWebhook;
 
 public class ProcessPayOSWebhookCommandHandler : IRequestHandler<ProcessPayOSWebhookCommand>
 {
-
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPaymentService _paymentService;
+    private readonly IAhamoveService _ahamove;
+    private readonly AhamovePickupOptions _pickup;
 
-    public ProcessPayOSWebhookCommandHandler(IUnitOfWork unitOfWork, IPaymentService paymentService)
+    public ProcessPayOSWebhookCommandHandler(
+        IUnitOfWork unitOfWork,
+        IPaymentService paymentService,
+        IAhamoveService ahamove,
+        IOptions<AhamovePickupOptions> pickup)
     {
         _unitOfWork = unitOfWork;
         _paymentService = paymentService;
+        _ahamove = ahamove;
+        _pickup = pickup.Value;
     }
 
     public async Task Handle(ProcessPayOSWebhookCommand request, CancellationToken cancellationToken)
@@ -47,8 +58,6 @@ public class ProcessPayOSWebhookCommandHandler : IRequestHandler<ProcessPayOSWeb
 
                 order.PaymentStatus = PaymentStatus.PAID;
                 order.UpdatedAt = DateTime.UtcNow;
-
-                // TODO: Task 8 — gọi IAhamoveService tạo Shipment
             }
             else
             {
@@ -75,6 +84,78 @@ public class ProcessPayOSWebhookCommandHandler : IRequestHandler<ProcessPayOSWeb
         {
             await _unitOfWork.RollbackTransactionAsync();
             throw;
+        }
+
+        // Tạo Shipment sau khi commit (PayOS đã PAID)
+        if (payload.Code == "00" && payload.Success)
+        {
+            await CreateShipmentAsync(order, cancellationToken);
+        }
+    }
+
+    private async Task CreateShipmentAsync(Domain.Entities.Order order, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(order.ShippingAddress) || string.IsNullOrEmpty(order.ShippingServiceId))
+            return;
+
+        try
+        {
+            var user = order.User;
+            var createRequest = new AhamoveCreateOrderRequest
+            {
+                ServiceId = order.ShippingServiceId,
+                PaymentMethod = "CASH",
+                Path =
+                [
+                    new AhamoveOrderPath
+                    {
+                        Lat = _pickup.Lat,
+                        Lng = _pickup.Lng,
+                        Address = _pickup.Address,
+                        Name = _pickup.Name,
+                        Mobile = _pickup.Mobile
+                    },
+                    new AhamoveOrderPath
+                    {
+                        Lat = order.DeliveryLat ?? 0,
+                        Lng = order.DeliveryLng ?? 0,
+                        Address = order.ShippingAddress,
+                        Name = user.FullName ?? string.Empty,
+                        Mobile = user.Phone ?? string.Empty,
+                        Cod = 0,
+                        TrackingNumber = order.Id.ToString()
+                    }
+                ]
+            };
+
+            var response = await _ahamove.CreateOrderAsync(createRequest, ct);
+
+            if (string.IsNullOrEmpty(response.Id))
+                return;
+
+            var shipment = new Shipment
+            {
+                OrderId = order.Id,
+                AhamoveOrderId = response.Id,
+                Status = Domain.Enums.ShipmentStatus.ASSIGNING,
+                ServiceId = response.ServiceId,
+                TotalFee = response.TotalPay,
+                CodAmount = 0,
+                SharedLink = response.SharedLink,
+                PickupAddress = _pickup.Address,
+                DeliveryAddress = order.ShippingAddress,
+                SupplierId = response.SupplierId,
+                AhamoveCreateTime = response.OrderTime > 0
+                    ? DateTimeOffset.FromUnixTimeSeconds((long)response.OrderTime).UtcDateTime
+                    : null
+            };
+
+            await _unitOfWork.Shipments.AddAsync(shipment);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch
+        {
+            // Shipment creation failed — order vẫn PAID, admin có thể tạo lại thủ công
         }
     }
 }

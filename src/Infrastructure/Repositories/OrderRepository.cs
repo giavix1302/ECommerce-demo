@@ -27,6 +27,7 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         => await _dbSet
             .Include(o => o.OrderItems)
                 .ThenInclude(oi => oi.Variant)
+            .Include(o => o.User)
             .FirstOrDefaultAsync(o => o.Id == orderId);
 
     public async Task<PaymentTransaction?> GetPaymentTransactionByOrderCodeAsync(long orderCode)

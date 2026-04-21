@@ -10,6 +10,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+public record CheckoutPreviewRequest(
+    string DeliveryAddress,
+    double DeliveryLat,
+    double DeliveryLng
+);
+
 [ApiController]
 [Authorize]
 public class OrdersController : ControllerBase
@@ -21,10 +27,13 @@ public class OrdersController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("api/v1/cart/checkout-preview")]
-    public async Task<IActionResult> CheckoutPreview()
+    [HttpPost("api/v1/cart/checkout-preview")]
+    public async Task<IActionResult> CheckoutPreview([FromBody] CheckoutPreviewRequest request)
     {
-        var result = await _mediator.Send(new GetCheckoutPreviewQuery());
+        var result = await _mediator.Send(new GetCheckoutPreviewQuery(
+            request.DeliveryAddress,
+            request.DeliveryLat,
+            request.DeliveryLng));
         return Ok(ApiResponse<CheckoutPreviewDto>.Ok(result));
     }
 
