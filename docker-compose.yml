@@ -1,0 +1,80 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce_api
+    ports:
+      - "5173:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ecommerce_db;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - ConnectionStrings__Redis=redis:6379
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      - JwtSettings__Issuer=ecommerceApiDemo
+      - JwtSettings__Audience=ecommerceApiDemo-clients
+      - JwtSettings__ExpiresInMinutes=60
+      - JwtSettings__RefreshTokenExpiresInDays=7
+      - AdminSeed__Email=${ADMIN_EMAIL:-admin@ecommerce.com}
+      - AdminSeed__Password=${ADMIN_PASSWORD}
+      - PayOSSettings__ClientId=${PAYOS_CLIENT_ID}
+      - PayOSSettings__ApiKey=${PAYOS_API_KEY}
+      - PayOSSettings__ChecksumKey=${PAYOS_CHECKSUM_KEY}
+      - PayOSSettings__ReturnUrl=${PAYOS_RETURN_URL:-http://localhost:3000/payment/return}
+      - PayOSSettings__CancelUrl=${PAYOS_CANCEL_URL:-http://localhost:3000/payment/cancel}
+      - AhamoveSettings__ApiKey=${AHAMOVE_API_KEY}
+      - AhamoveSettings__Phone=${AHAMOVE_PHONE}
+      - AhamoveSettings__PickupMobile=${AHAMOVE_PICKUP_MOBILE}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ecommerce_sqlserver
+    ports:
+      - "1434:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+      - MSSQL_PID=Developer
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SA_PASSWORD}\" -Q 'SELECT 1' -No -C || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ecommerce_net
+
+volumes:
+  sqlserver_data:
+  redis_data:
+
+networks:
+  ecommerce_net:
+    driver: bridge
