@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PayOS;
+using StackExchange.Redis;
 
 namespace Infrastructure.Extensions;
 
@@ -56,6 +57,21 @@ public static class InfrastructureServiceExtensions
         {
             client.BaseAddress = new Uri(ahamoveSettings.BaseUrl);
         });
+
+        var redisConnection = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnection))
+        {
+            services.AddStackExchangeRedisCache(opts => opts.Configuration = redisConnection);
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
+            services.AddScoped<ICacheService, RedisCacheService>();
+        }
+        else
+        {
+            services.AddDistributedMemoryCache();
+            services.AddScoped<ICacheService, NullCacheService>();
+        }
+
+        services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
 
         return services;
     }

@@ -15,6 +15,8 @@ public class CouponUsageConfiguration : IEntityTypeConfiguration<CouponUsage>
 
         builder.Property(cu => cu.UsedAt).IsRequired();
 
+        builder.HasIndex(cu => new { cu.UserId, cu.CouponId });
+
         // Relationships
         builder.HasOne(cu => cu.Coupon)
             .WithMany(c => c.CouponUsages)

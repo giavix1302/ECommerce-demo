@@ -1,5 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
+using Application.Features.Products.Queries.GetProductById;
+using Application.Features.Products.Queries.GetProducts;
 using Domain.Entities;
 using MediatR;
 
@@ -8,10 +10,12 @@ namespace Application.Features.Variants.Commands.CreateVariant;
 public class CreateVariantCommandHandler : IRequestHandler<CreateVariantCommand, CreateVariantResult>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
 
-    public CreateVariantCommandHandler(IUnitOfWork unitOfWork)
+    public CreateVariantCommandHandler(IUnitOfWork unitOfWork, ICacheService cache)
     {
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<CreateVariantResult> Handle(CreateVariantCommand request, CancellationToken cancellationToken)
@@ -39,6 +43,11 @@ public class CreateVariantCommandHandler : IRequestHandler<CreateVariantCommand,
 
         await _unitOfWork.Variants.AddAsync(variant);
         await _unitOfWork.SaveChangesAsync();
+
+        await Task.WhenAll(
+            _cache.RemoveByPrefixAsync(GetProductsQueryHandler.CachePrefix, cancellationToken),
+            _cache.RemoveAsync($"{GetProductByIdQueryHandler.CachePrefix}:{request.ProductId}", cancellationToken)
+        );
 
         return new CreateVariantResult(variant.Id, variant.ProductId, variant.Sku, variant.Price, variant.StockQuantity, variant.IsDefault);
     }

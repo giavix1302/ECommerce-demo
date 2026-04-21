@@ -8,37 +8,46 @@ namespace Application.Features.Products.Queries.GetProductById;
 public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, ProductDetailDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
+    internal const string CachePrefix = "product";
 
-    public GetProductByIdQueryHandler(IUnitOfWork unitOfWork)
+    public GetProductByIdQueryHandler(IUnitOfWork unitOfWork, ICacheService cache)
     {
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<ProductDetailDto> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
     {
-        var product = await _unitOfWork.Products.GetByIdWithVariantsAsync(request.Id);
+        var cacheKey = $"{CachePrefix}:{request.Id}";
 
-        if (product is null || product.IsDeleted)
-            throw new NotFoundException("Product", request.Id);
+        var result = await _cache.GetOrCreateAsync(cacheKey, CachePrefix, async () =>
+        {
+            var product = await _unitOfWork.Products.GetByIdWithVariantsAsync(request.Id);
+            if (product is null || product.IsDeleted)
+                throw new NotFoundException("Product", request.Id);
 
-        return new ProductDetailDto(
-            product.Id,
-            product.Name,
-            product.Description,
-            product.CategoryId,
-            product.Category?.Name,
-            product.Variants.Where(v => !v.IsDeleted).Select(v => new VariantSummaryDto(
-                v.Id,
-                v.Sku,
-                v.Price,
-                v.StockQuantity,
-                v.IsDefault,
-                v.AttributeValues.Select(va => new VariantAttributeDto(
-                    va.AttributeId,
-                    va.Attribute.Name,
-                    va.Value
+            return new ProductDetailDto(
+                product.Id,
+                product.Name,
+                product.Description,
+                product.CategoryId,
+                product.Category?.Name,
+                product.Variants.Where(v => !v.IsDeleted).Select(v => new VariantSummaryDto(
+                    v.Id,
+                    v.Sku,
+                    v.Price,
+                    v.StockQuantity,
+                    v.IsDefault,
+                    v.AttributeValues.Select(va => new VariantAttributeDto(
+                        va.AttributeId,
+                        va.Attribute.Name,
+                        va.Value
+                    ))
                 ))
-            ))
             );
+        }, TimeSpan.FromSeconds(60), cancellationToken);
+
+        return result ?? throw new NotFoundException("Product", request.Id);
     }
 }

@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Helpers;
 using Application.Common.Interfaces;
+using Application.Features.Categories.Queries.GetCategories;
 using Domain.Entities;
 using MediatR;
 
@@ -9,10 +10,12 @@ namespace Application.Features.Categories.Commands.CreateCategory;
 public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, CreateCategoryResult>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
 
-    public CreateCategoryCommandHandler(IUnitOfWork unitOfWork)
+    public CreateCategoryCommandHandler(IUnitOfWork unitOfWork, ICacheService cache)
     {
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task<CreateCategoryResult> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
@@ -37,6 +40,8 @@ public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryComman
 
         await _unitOfWork.Categories.AddAsync(category);
         await _unitOfWork.SaveChangesAsync();
+
+        await _cache.RemoveByPrefixAsync(GetCategoriesQueryHandler.CachePrefix, cancellationToken);
 
         return new CreateCategoryResult(category.Id, category.Name, category.Slug);
     }

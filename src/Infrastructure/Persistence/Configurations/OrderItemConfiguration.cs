@@ -25,6 +25,8 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 
         builder.Property(oi => oi.CreatedAt).IsRequired();
 
+        builder.HasIndex(oi => oi.OrderId);
+
         // Relationships
         builder.HasOne(oi => oi.Variant)
             .WithMany(v => v.OrderItems)
