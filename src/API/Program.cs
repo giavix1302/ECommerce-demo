@@ -1,6 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 using API.Middleware;
+using Application.Common.Interfaces;
 using Application.Extensions;
 using Hangfire;
 using Hangfire.SqlServer;
@@ -60,6 +62,19 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async ctx =>
+        {
+            var jti = ctx.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            if (string.IsNullOrEmpty(jti))
+                return;
+
+            var blacklist = ctx.HttpContext.RequestServices.GetRequiredService<ITokenBlacklistService>();
+            if (await blacklist.IsBlacklistedAsync(jti))
+                ctx.Fail("Token has been revoked.");
+        }
     };
 });
 

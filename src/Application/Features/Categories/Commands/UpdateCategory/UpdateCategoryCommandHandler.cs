@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Helpers;
 using Application.Common.Interfaces;
+using Application.Features.Categories.Queries.GetCategories;
 using MediatR;
 
 namespace Application.Features.Categories.Commands.UpdateCategory;
@@ -8,10 +9,12 @@ namespace Application.Features.Categories.Commands.UpdateCategory;
 public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
 
-    public UpdateCategoryCommandHandler(IUnitOfWork unitOfWork)
+    public UpdateCategoryCommandHandler(IUnitOfWork unitOfWork, ICacheService cache)
     {
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
@@ -40,5 +43,7 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
 
         _unitOfWork.Categories.Update(category);
         await _unitOfWork.SaveChangesAsync();
+
+        await _cache.RemoveByPrefixAsync(GetCategoriesQueryHandler.CachePrefix, cancellationToken);
     }
 }

@@ -21,6 +21,8 @@ public class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 
         builder.Property(ci => ci.CreatedAt).IsRequired();
 
+        builder.HasIndex(ci => ci.CartId);
+
         // Relationships
         builder.HasOne(ci => ci.Variant)
             .WithMany(v => v.CartItems)

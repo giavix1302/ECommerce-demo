@@ -1,22 +1,30 @@
-
 using Application.Common.Interfaces;
 using Domain.Entities;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Application.Common.Services;
 
 public class PromotionEngineService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemoryCache _cache;
+    private const string CacheKey = "active_promotion_rules";
 
-    public PromotionEngineService(IUnitOfWork unitOfWork)
+    public PromotionEngineService(IUnitOfWork unitOfWork, IMemoryCache cache)
     {
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
-    // Implement promotion evaluation and application logic here
+    public void InvalidateCache() => _cache.Remove(CacheKey);
+
     public async Task<(PromotionRule?, decimal)> EvaluateAsync(Cart cart)
     {
-        var rules = await _unitOfWork.Promotions.GetActivePromotionRulesWithDetailsAsync();
+        var rules = await _cache.GetOrCreateAsync(CacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+            return await _unitOfWork.Promotions.GetActivePromotionRulesWithDetailsAsync();
+        }) ?? [];
 
         PromotionRule? bestRule = null;
         decimal bestDiscount = decimal.MinValue;

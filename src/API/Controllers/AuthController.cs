@@ -4,7 +4,9 @@ using Application.Features.Auth.Commands.Logout;
 using Application.Features.Auth.Commands.Refresh;
 using Application.Features.Auth.Commands.Register;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace API.Controllers;
 
@@ -59,11 +61,19 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
         var refreshToken = Request.Cookies[RefreshTokenCookieName];
+
+        var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+        var expClaim = User.FindFirst(JwtRegisteredClaimNames.Exp)?.Value;
+        DateTime? accessTokenExpiry = expClaim is not null
+            ? DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim)).UtcDateTime
+            : null;
+
         if (!string.IsNullOrWhiteSpace(refreshToken))
-            await _mediator.Send(new LogoutCommand(refreshToken));
+            await _mediator.Send(new LogoutCommand(refreshToken, jti, accessTokenExpiry));
 
         Response.Cookies.Delete(RefreshTokenCookieName);
         return Ok(ApiResponse<object?>.Ok(null, "Logged out successfully."));

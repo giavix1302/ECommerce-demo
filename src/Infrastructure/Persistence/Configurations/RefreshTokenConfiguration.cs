@@ -17,6 +17,7 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .HasMaxLength(500);
 
         builder.HasIndex(x => x.Token).IsUnique();
+        builder.HasIndex(x => new { x.UserId, x.IsRevoked });
 
         builder.Property(x => x.ExpiresAt).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();

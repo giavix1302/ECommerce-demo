@@ -15,6 +15,7 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
 
         builder.Property(pv => pv.Sku).HasMaxLength(100).IsRequired(false);
         builder.HasIndex(pv => pv.Sku).IsUnique().HasFilter("[sku] IS NOT NULL");
+        builder.HasIndex(pv => new { pv.ProductId, pv.IsDeleted });
 
         builder.Property(pv => pv.Price)
             .IsRequired()

@@ -63,6 +63,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.CreatedAt).IsRequired();
         builder.Property(o => o.UpdatedAt).IsRequired();
 
+        builder.HasIndex(o => new { o.UserId, o.Status });
+
         // Relationships
         builder.HasOne(o => o.Coupon)
             .WithMany(c => c.Orders)

@@ -17,6 +17,7 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
             .IsRequired()
             .HasMaxLength(255);
         builder.HasIndex(s => s.AhamoveOrderId).IsUnique();
+        builder.HasIndex(s => s.OrderId);
 
         builder.Property(s => s.Status)
             .IsRequired()

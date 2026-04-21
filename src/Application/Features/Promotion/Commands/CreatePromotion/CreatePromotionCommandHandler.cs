@@ -1,5 +1,6 @@
 using Application.Common.DTOs;
 using Application.Common.Interfaces;
+using Application.Common.Services;
 using Domain.Entities;
 using MediatR;
 
@@ -8,10 +9,12 @@ namespace Application.Features.Promotion.Commands.CreatePromotion;
 public class CreatePromotionCommandHandler : IRequestHandler<CreatePromotionCommand, CreatePromotionResult>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly PromotionEngineService _promotionEngine;
 
-    public CreatePromotionCommandHandler(IUnitOfWork unitOfWork)
+    public CreatePromotionCommandHandler(IUnitOfWork unitOfWork, PromotionEngineService promotionEngine)
     {
         _unitOfWork = unitOfWork;
+        _promotionEngine = promotionEngine;
     }
 
     public async Task<CreatePromotionResult> Handle(CreatePromotionCommand request, CancellationToken cancellationToken)
@@ -42,6 +45,8 @@ public class CreatePromotionCommandHandler : IRequestHandler<CreatePromotionComm
 
         await _unitOfWork.Promotions.AddAsync(promotion);
         await _unitOfWork.SaveChangesAsync();
+
+        _promotionEngine.InvalidateCache();
 
         return new CreatePromotionResult(
             promotion.Id,

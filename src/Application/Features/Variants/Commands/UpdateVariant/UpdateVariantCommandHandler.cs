@@ -1,5 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
+using Application.Features.Products.Queries.GetProductById;
+using Application.Features.Products.Queries.GetProducts;
 using MediatR;
 
 namespace Application.Features.Variants.Commands.UpdateVariant;
@@ -7,10 +9,12 @@ namespace Application.Features.Variants.Commands.UpdateVariant;
 public class UpdateVariantCommandHandler : IRequestHandler<UpdateVariantCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
 
-    public UpdateVariantCommandHandler(IUnitOfWork unitOfWork)
+    public UpdateVariantCommandHandler(IUnitOfWork unitOfWork, ICacheService cache)
     {
         _unitOfWork = unitOfWork;
+        _cache = cache;
     }
 
     public async Task Handle(UpdateVariantCommand request, CancellationToken cancellationToken)
@@ -31,5 +35,10 @@ public class UpdateVariantCommandHandler : IRequestHandler<UpdateVariantCommand>
 
         _unitOfWork.Variants.Update(variant);
         await _unitOfWork.SaveChangesAsync();
+
+        await Task.WhenAll(
+            _cache.RemoveByPrefixAsync(GetProductsQueryHandler.CachePrefix, cancellationToken),
+            _cache.RemoveAsync($"{GetProductByIdQueryHandler.CachePrefix}:{variant.ProductId}", cancellationToken)
+        );
     }
 }
