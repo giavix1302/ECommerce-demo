@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260421081408_AddPerformanceIndexes")]
-    partial class AddPerformanceIndexes
+    [Migration("20260421085014_AddCompositeIndexes")]
+    partial class AddCompositeIndexes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -207,7 +207,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "CouponId");
 
                     b.ToTable("coupon_usages", (string)null);
                 });
@@ -284,7 +284,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("nvarchar(450)")
                         .HasDefaultValue("PENDING");
 
                     b.Property<decimal>("Subtotal")
@@ -305,7 +305,7 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PromotionRuleId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "Status");
 
                     b.ToTable("orders", (string)null);
                 });
@@ -530,11 +530,11 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("Sku")
                         .IsUnique()
                         .HasFilter("[sku] IS NOT NULL");
+
+                    b.HasIndex("ProductId", "IsDeleted");
 
                     b.ToTable("product_variants", (string)null);
                 });
@@ -673,7 +673,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsRevoked");
 
                     b.ToTable("refresh_tokens", (string)null);
                 });
