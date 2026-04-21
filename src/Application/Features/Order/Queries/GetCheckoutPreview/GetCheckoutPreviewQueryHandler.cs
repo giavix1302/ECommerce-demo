@@ -1,9 +1,12 @@
+using Application.Common.DTOs.Ahamove;
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Common.Services;
+using Application.Features.Shipping.Queries.GetShippingFee;
 using Domain.Constants;
 using Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace Application.Features.Order.Queries.GetCheckoutPreview;
 
@@ -12,15 +15,21 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly PromotionEngineService _promotionEngine;
+    private readonly IAhamoveService _ahamove;
+    private readonly AhamovePickupOptions _pickup;
 
     public GetCheckoutPreviewQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        PromotionEngineService promotionEngine)
+        PromotionEngineService promotionEngine,
+        IAhamoveService ahamove,
+        IOptions<AhamovePickupOptions> pickup)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _promotionEngine = promotionEngine;
+        _ahamove = ahamove;
+        _pickup = pickup.Value;
     }
 
     public async Task<CheckoutPreviewDto> Handle(GetCheckoutPreviewQuery request, CancellationToken cancellationToken)
@@ -82,9 +91,10 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
             }
         }
 
-        // 8. Tính TotalAmount
+        // 8. Estimate shipping fee từ Ahamove (trả list để client chọn service)
+        var shippingEstimates = await EstimateShippingAsync(request, cancellationToken);
+
         var totalAmount = baseAmount - rankDiscountAmount - couponDiscount;
-        // ShippingFee = null — implement sau khi có Ahamove (Task 8)
 
         // 9. Build DTO
         var items = cart.CartItems.Select(ci => new CheckoutItemDto(
@@ -153,8 +163,56 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
             couponDto,
             user.MembershipRank,
             rankDiscountAmount,
-            ShippingFee: null,
+            shippingEstimates,
             totalAmount
         );
+    }
+
+    private async Task<IEnumerable<CheckoutShippingEstimateDto>> EstimateShippingAsync(
+        GetCheckoutPreviewQuery request,
+        CancellationToken ct)
+    {
+        try
+        {
+            var estimateRequest = new AhamoveEstimateRequest
+            {
+                Path =
+                [
+                    new AhamoveOrderPath
+                    {
+                        Lat = _pickup.Lat,
+                        Lng = _pickup.Lng,
+                        Address = _pickup.Address,
+                        Name = _pickup.Name,
+                        Mobile = _pickup.Mobile
+                    },
+                    new AhamoveOrderPath
+                    {
+                        Lat = request.DeliveryLat,
+                        Lng = request.DeliveryLng,
+                        Address = request.DeliveryAddress,
+                        Name = string.Empty,
+                        Mobile = string.Empty
+                    }
+                ],
+                Services =
+                [
+                    new AhamoveEstimateService { Id = "SGN-BIKE" },
+                    new AhamoveEstimateService { Id = "SGN-EXPRESS" }
+                ]
+            };
+
+            var estimates = await _ahamove.EstimateShippingFeeAsync(estimateRequest, ct);
+            return estimates.Select(e => new CheckoutShippingEstimateDto(
+                e.ServiceId,
+                e.TotalPrice,
+                e.Distance,
+                e.Duration
+            ));
+        }
+        catch
+        {
+            return [];
+        }
     }
 }

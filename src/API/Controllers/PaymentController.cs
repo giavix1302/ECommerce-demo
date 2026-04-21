@@ -17,17 +17,26 @@ public class PaymentController : ControllerBase
         _mediator = mediator;
     }
 
+    [HttpGet("payos/webhook")]
+    public IActionResult PayOSWebhookVerify() => Ok();
+
     [HttpPost("payos/webhook")]
-    public async Task<IActionResult> PayOSWebhook([FromBody] PayOSWebhookPayload payload)
+    public async Task<IActionResult> PayOSWebhook([FromBody] PayOSWebhookPayload? payload)
     {
+        if (payload is null)
+            return Ok();
+
         try
         {
-            Console.WriteLine($"Received PayOS webhook: {System.Text.Json.JsonSerializer.Serialize(payload)}");
             await _mediator.Send(new ProcessPayOSWebhookCommand(payload));
         }
         catch (InvalidWebhookSignatureException)
         {
             // Silently ignore — invalid signature, not a legitimate PayOS call
+        }
+        catch
+        {
+            // always 200
         }
 
         return Ok();

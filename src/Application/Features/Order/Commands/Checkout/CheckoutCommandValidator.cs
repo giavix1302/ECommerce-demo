@@ -10,9 +10,15 @@ public class CheckoutCommandValidator : AbstractValidator<CheckoutCommand>
         RuleFor(x => x.PaymentMethod)
             .IsInEnum().WithMessage("Invalid payment method.");
 
-        RuleFor(x => x.ShippingAddress)
-            .NotEmpty().WithMessage("Shipping address is required.")
-            .MaximumLength(500).WithMessage("Shipping address must not exceed 500 characters.");
+        RuleFor(x => x.DeliveryAddress)
+            .NotEmpty().WithMessage("Delivery address is required.")
+            .MaximumLength(500).WithMessage("Delivery address must not exceed 500 characters.");
+
+        RuleFor(x => x.DeliveryLat)
+            .NotEqual(0).WithMessage("Delivery latitude is required.");
+
+        RuleFor(x => x.DeliveryLng)
+            .NotEqual(0).WithMessage("Delivery longitude is required.");
 
         // SelectedGiftVariantId — validated in handler (requires DB lookup)
         // Only basic format check here

@@ -3,7 +3,11 @@ using MediatR;
 
 namespace Application.Features.Order.Queries.GetCheckoutPreview;
 
-public record GetCheckoutPreviewQuery : IRequest<CheckoutPreviewDto>;
+public record GetCheckoutPreviewQuery(
+    string DeliveryAddress,
+    double DeliveryLat,
+    double DeliveryLng
+) : IRequest<CheckoutPreviewDto>;
 
 public record CheckoutPreviewDto(
     IEnumerable<CheckoutItemDto> Items,
@@ -12,8 +16,15 @@ public record CheckoutPreviewDto(
     CheckoutCouponDto? Coupon,
     MembershipRank MembershipRank,
     decimal RankDiscountAmount,
-    decimal? ShippingFee,
+    IEnumerable<CheckoutShippingEstimateDto> ShippingEstimates,
     decimal TotalAmount
+);
+
+public record CheckoutShippingEstimateDto(
+    string ServiceId,
+    decimal TotalPrice,
+    double Distance,
+    int Duration
 );
 
 public record CheckoutItemDto(

@@ -19,6 +19,7 @@ public class UnitOfWork : IUnitOfWork
     public IReviewRepository Reviews { get; }
     public IRefreshTokenRepository RefreshTokens { get; }
     public IPromotionRepository Promotions { get; }
+    public IShipmentRepository Shipments { get; }
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -33,6 +34,7 @@ public class UnitOfWork : IUnitOfWork
         Reviews = new ReviewRepository(context);
         RefreshTokens = new RefreshTokenRepository(context);
         Promotions = new PromotionRepository(context);
+        Shipments = new ShipmentRepository(context);
     }
 
     public async Task<int> SaveChangesAsync()

@@ -1,6 +1,7 @@
 using Application.Common.Interfaces;
 using Application.Common.Services;
 using Application.Features.Payment.Jobs;
+using Application.Features.Shipping.Queries.GetShippingFee;
 using Infrastructure.Persistence;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
@@ -35,6 +36,26 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IPaymentService, PayOSService>();
 
         services.AddScoped<ExpiredPaymentJob>();
+
+        // Ahamove
+        var ahamoveSettings = configuration.GetSection("AhamoveSettings").Get<AhamoveSettings>()!;
+        services.Configure<AhamoveSettings>(configuration.GetSection("AhamoveSettings"));
+
+        // AhamovePickupOptions bind từ AhamoveSettings section (cùng key prefix)
+        services.Configure<AhamovePickupOptions>(opts =>
+        {
+            opts.Address = ahamoveSettings.PickupAddress;
+            opts.Name = ahamoveSettings.PickupName;
+            opts.Mobile = ahamoveSettings.PickupMobile;
+            opts.Lat = ahamoveSettings.PickupLat;
+            opts.Lng = ahamoveSettings.PickupLng;
+        });
+
+        services.AddMemoryCache();
+        services.AddHttpClient<IAhamoveService, AhamoveService>(client =>
+        {
+            client.BaseAddress = new Uri(ahamoveSettings.BaseUrl);
+        });
 
         return services;
     }
