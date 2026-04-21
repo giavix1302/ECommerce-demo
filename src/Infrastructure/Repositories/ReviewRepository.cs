@@ -45,4 +45,12 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
             r.UserId == userId &&
             r.ProductId == productId &&
             r.OrderId == orderId);
+
+    public async Task<bool> HasCompletedOrderForProductAsync(long userId, long productId, long orderId)
+        => await _context.Orders
+            .Where(o => o.Id == orderId &&
+                        o.UserId == userId &&
+                        o.Status == Domain.Enums.OrderStatus.COMPLETED)
+            .AnyAsync(o => o.OrderItems
+                .Any(oi => oi.Variant.ProductId == productId));
 }

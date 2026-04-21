@@ -11,4 +11,5 @@ public interface IReviewRepository : IGenericRepository<Review>
 
     Task<double> GetAverageRatingAsync(long productId);
     Task<bool> HasUserReviewedProductInOrderAsync(long userId, long productId, long orderId);
+    Task<bool> HasCompletedOrderForProductAsync(long userId, long productId, long orderId);
 }
