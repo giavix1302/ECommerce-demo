@@ -18,7 +18,6 @@ public static class ApplicationServiceExtensions
             cfg.RegisterServicesFromAssembly(assembly);
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
         });
-        services.AddAutoMapper(cfg => cfg.AddMaps(assembly));
         services.AddValidatorsFromAssembly(assembly);
 
         services.AddScoped<ExpiredPaymentJob>();

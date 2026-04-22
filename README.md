@@ -41,6 +41,7 @@ Xây dựng backend cho một nền tảng thương mại điện tử hoàn ch�
 | **Vận chuyển** | Tra cứu phí ship, tích hợp Ahamove, xử lý webhook cập nhật trạng thái |
 | **Đánh giá**   | Khách hàng đánh giá sản phẩm sau mua hàng                             |
 | **Admin**      | Quản lý danh mục, coupon, khuyến mãi, biến thể qua API riêng          |
+| **Rate Limit** | Built-in .NET Rate Limiter + Redis, 4 policy theo cấp độ nhạy cảm     |
 
 ---
 
@@ -163,7 +164,6 @@ ecommerceApiDemo/
 | Thư viện              | Phiên bản | Mục đích           |
 | --------------------- | --------- | ------------------ |
 | MediatR               | 14.1      | CQRS mediator      |
-| AutoMapper            | 16.1      | Object mapping     |
 | FluentValidation      | 12.1      | Request validation |
 | Hangfire              | 1.8       | Background jobs    |
 | BCrypt.Net-Next       | 4.1       | Password hashing   |
