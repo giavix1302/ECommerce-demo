@@ -24,6 +24,11 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
         builder.Property(pv => pv.StockQuantity).HasDefaultValue(0);
         builder.Property(pv => pv.IsDefault).HasDefaultValue(false);
 
+        builder.Property(pv => pv.WeightKg).IsRequired(false);
+        builder.Property(pv => pv.LengthCm).IsRequired(false);
+        builder.Property(pv => pv.WidthCm).IsRequired(false);
+        builder.Property(pv => pv.HeightCm).IsRequired(false);
+
         builder.Property(pv => pv.IsDeleted).HasDefaultValue(false);
         builder.Property(pv => pv.DeletedAt).IsRequired(false);
 

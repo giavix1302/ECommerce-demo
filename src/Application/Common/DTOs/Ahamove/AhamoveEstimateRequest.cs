@@ -24,5 +24,14 @@ public class AhamoveEstimateService
     public string Id { get; set; } = string.Empty;
 
     [JsonPropertyName("requests")]
-    public List<object> Requests { get; set; } = [];
+    public List<AhamoveBulkyRequest> Requests { get; set; } = [];
+}
+
+public class AhamoveBulkyRequest
+{
+    [JsonPropertyName("_id")]
+    public string Id { get; set; } = string.Empty;   // e.g. "SGN-BIKE-BULKY"
+
+    [JsonPropertyName("tier_code")]
+    public string TierCode { get; set; } = string.Empty;  // "TIER_2" / "TIER_3" / "TIER_4"
 }

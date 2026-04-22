@@ -19,4 +19,7 @@ public class AhamoveCreateOrderRequest
 
     [JsonPropertyName("remarks")]
     public string? Remarks { get; set; }
+
+    [JsonPropertyName("requests")]
+    public List<AhamoveBulkyRequest> Requests { get; set; } = [];
 }
