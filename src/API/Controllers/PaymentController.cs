@@ -3,6 +3,7 @@ using Application.Common.Interfaces;
 using Application.Features.Payment.Commands.ProcessPayOSWebhook;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -18,9 +19,11 @@ public class PaymentController : ControllerBase
     }
 
     [HttpGet("payos/webhook")]
+    [DisableRateLimiting]
     public IActionResult PayOSWebhookVerify() => Ok();
 
     [HttpPost("payos/webhook")]
+    [DisableRateLimiting]
     public async Task<IActionResult> PayOSWebhook([FromBody] PayOSWebhookPayload? payload)
     {
         if (payload is null)

@@ -1,4 +1,5 @@
 using API.Common;
+using API.RateLimit;
 using Application.Common.Models;
 using Application.Features.Coupon.Commands.CreateCoupon;
 using Application.Features.Coupon.Commands.UpdateCoupon;
@@ -6,6 +7,7 @@ using Application.Features.Coupon.Queries.GetCoupons;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -22,6 +24,7 @@ public class AdminCouponsController : ControllerBase
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var result = await _mediator.Send(new GetCouponsQuery(page, pageSize));
@@ -29,6 +32,7 @@ public class AdminCouponsController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Create([FromBody] CreateCouponCommand? command)
     {
         if (command is null)
@@ -39,6 +43,7 @@ public class AdminCouponsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Update([FromRoute] long id, [FromBody] UpdateCouponCommand? command)
     {
         if (command is null)

@@ -1,9 +1,11 @@
 using API.Common;
+using API.RateLimit;
 using Application.Features.Review.Commands.CreateReview;
 using Application.Features.Review.Queries.GetProductReviews;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -20,6 +22,7 @@ public class ReviewsController : ControllerBase
 
     [HttpPost("reviews")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> CreateReview([FromBody] CreateReviewCommand? command)
     {
         if (command is null)
@@ -30,6 +33,7 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpGet("products/{id:long}/reviews")]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetProductReviews(
         [FromRoute] long id,
         [FromQuery] int page = 1,

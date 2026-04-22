@@ -1,4 +1,5 @@
 using API.Common;
+using API.RateLimit;
 using Application.Features.Variants.Commands.CreateVariant;
 using Application.Features.Variants.Commands.DeleteVariant;
 using Application.Features.Variants.Commands.UpdateVariant;
@@ -6,6 +7,7 @@ using Application.Features.Variants.Queries.GetVariants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -22,6 +24,7 @@ public class AdminVariantsController : ControllerBase
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetByProduct([FromQuery] long? productId)
     {
         if (productId is null or <= 0)
@@ -32,6 +35,7 @@ public class AdminVariantsController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Create([FromBody] CreateVariantCommand? command)
     {
         if (command is null)
@@ -42,6 +46,7 @@ public class AdminVariantsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Update([FromRoute] long id, [FromBody] UpdateVariantCommand? command)
     {
         if (command is null)
@@ -55,6 +60,7 @@ public class AdminVariantsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Delete([FromRoute] long id)
     {
         await _mediator.Send(new DeleteVariantCommand(id));

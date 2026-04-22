@@ -1,4 +1,5 @@
 using API.Common;
+using API.RateLimit;
 using Application.Features.Auth.Commands.Login;
 using Application.Features.Auth.Commands.Logout;
 using Application.Features.Auth.Commands.Refresh;
@@ -6,6 +7,7 @@ using Application.Features.Auth.Commands.Register;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace API.Controllers;
@@ -23,6 +25,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitPolicy.AuthStrict)]
     public async Task<IActionResult> Register([FromBody] RegisterCommand? command)
     {
         if (command is null)
@@ -33,6 +36,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicy.AuthStrict)]
     public async Task<IActionResult> Login([FromBody] LoginCommand? command)
     {
         if (command is null)
@@ -47,6 +51,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [EnableRateLimiting(RateLimitPolicy.AuthNormal)]
     public async Task<IActionResult> Refresh()
     {
         var refreshToken = Request.Cookies[RefreshTokenCookieName];
@@ -62,6 +67,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.AuthNormal)]
     public async Task<IActionResult> Logout()
     {
         var refreshToken = Request.Cookies[RefreshTokenCookieName];

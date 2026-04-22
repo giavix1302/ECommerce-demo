@@ -1,4 +1,5 @@
 using API.Common;
+using API.RateLimit;
 using Application.Common.Models;
 using Application.Features.Promotion.Commands.CreatePromotion;
 using Application.Features.Promotion.Queries.GetPromotionById;
@@ -6,6 +7,7 @@ using Application.Features.Promotion.Queries.GetPromotions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -22,6 +24,7 @@ public class AdminPromotionsController : ControllerBase
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var result = await _mediator.Send(new GetPromotionsQuery(page, pageSize));
@@ -29,6 +32,7 @@ public class AdminPromotionsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetById([FromRoute] long id)
     {
         var result = await _mediator.Send(new GetPromotionByIdQuery(id));
@@ -36,6 +40,7 @@ public class AdminPromotionsController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Create([FromBody] CreatePromotionCommand? command)
     {
         if (command is null)

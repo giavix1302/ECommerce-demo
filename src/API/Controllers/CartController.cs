@@ -1,4 +1,5 @@
 using API.Common;
+using API.RateLimit;
 using Application.Features.Cart.Commands.AddToCart;
 using Application.Features.Cart.Commands.UpdateCartItem;
 using Application.Features.Cart.Queries.GetCart;
@@ -7,6 +8,7 @@ using Application.Features.Coupon.Commands.RemoveCoupon;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -23,6 +25,7 @@ public class CartController : ControllerBase
 
     [HttpGet]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetCart()
     {
         var result = await _mediator.Send(new GetCartQuery());
@@ -31,6 +34,7 @@ public class CartController : ControllerBase
 
     [HttpPost("add")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> AddToCart([FromBody] AddToCartCommand command)
     {
         var result = await _mediator.Send(command);
@@ -39,6 +43,7 @@ public class CartController : ControllerBase
 
     [HttpPut("items/{id}")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> UpdateCartItem([FromRoute] long id, [FromBody] UpdateCartItemCommand command)
     {
         var cmd = command with { CartItemId = id };
@@ -48,6 +53,7 @@ public class CartController : ControllerBase
 
     [HttpPost("coupon")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> ApplyCoupon([FromBody] ApplyCouponCommand command)
     {
         var result = await _mediator.Send(command);
@@ -56,6 +62,7 @@ public class CartController : ControllerBase
 
     [HttpDelete("coupon")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> RemoveCoupon()
     {
         await _mediator.Send(new RemoveCouponCommand());

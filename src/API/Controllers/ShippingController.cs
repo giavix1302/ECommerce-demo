@@ -1,10 +1,12 @@
 using API.Common;
+using API.RateLimit;
 using Application.Common.DTOs.Ahamove;
 using Application.Features.Shipping.Commands.ProcessAhamoveWebhook;
 using Application.Features.Shipping.Queries.GetShippingFee;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -21,6 +23,7 @@ public class ShippingController : ControllerBase
 
     [HttpPost("fee")]
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetShippingFee([FromBody] GetShippingFeeRequest request)
     {
         var result = await _mediator.Send(new GetShippingFeeQuery(
@@ -32,6 +35,7 @@ public class ShippingController : ControllerBase
     }
 
     [HttpPost("webhook")]
+    [DisableRateLimiting]
     public async Task<IActionResult> AhamoveWebhook([FromBody] AhamoveWebhookPayload payload)
     {
         try
