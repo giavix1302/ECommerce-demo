@@ -1,5 +1,6 @@
 using Application.Common.DTOs.Ahamove;
 using Application.Common.Exceptions;
+using Application.Common.Helpers;
 using Application.Common.Interfaces;
 using Application.Common.Services;
 using Application.Features.Shipping.Queries.GetShippingFee;
@@ -92,7 +93,12 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
         }
 
         // 8. Estimate shipping fee từ Ahamove (trả list để client chọn service)
-        var shippingEstimates = await EstimateShippingAsync(request, cancellationToken);
+        var bulkyTier = AhamoveBulkyTierHelper.GetTierFromItems(
+            cart.CartItems.Select(ci => (ci.Variant.WeightKg, ci.Variant.LengthCm, ci.Variant.WidthCm, ci.Variant.HeightCm, ci.Quantity))
+        );
+        if (bulkyTier.ExceedsLimit)
+            throw new BadRequestException("Order is too heavy or too large for motorbike delivery. Please contact us for alternative shipping.");
+        var shippingEstimates = await EstimateShippingAsync(request, bulkyTier.Tier, cancellationToken);
 
         var totalAmount = baseAmount - rankDiscountAmount - couponDiscount;
 
@@ -170,10 +176,15 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
 
     private async Task<IEnumerable<CheckoutShippingEstimateDto>> EstimateShippingAsync(
         GetCheckoutPreviewQuery request,
+        string? bulkyTier,
         CancellationToken ct)
     {
         try
         {
+            var bulkyRequests = bulkyTier is not null
+                ? new List<AhamoveBulkyRequest> { new() { Id = "SGN-BIKE-BULKY", TierCode = bulkyTier } }
+                : new List<AhamoveBulkyRequest>();
+
             var estimateRequest = new AhamoveEstimateRequest
             {
                 Path =
@@ -197,18 +208,20 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
                 ],
                 Services =
                 [
-                    new AhamoveEstimateService { Id = "SGN-BIKE" },
-                    new AhamoveEstimateService { Id = "SGN-EXPRESS" }
+                    new AhamoveEstimateService { Id = "SGN-BIKE", Requests = bulkyRequests },
+                    new AhamoveEstimateService { Id = "SGN-EXPRESS", Requests = bulkyRequests }
                 ]
             };
 
             var estimates = await _ahamove.EstimateShippingFeeAsync(estimateRequest, ct);
-            return estimates.Select(e => new CheckoutShippingEstimateDto(
-                e.ServiceId,
-                e.TotalPrice,
-                e.Distance,
-                e.Duration
-            ));
+            return estimates
+                .Where(e => e.Data is not null)
+                .Select(e => new CheckoutShippingEstimateDto(
+                    e.ServiceId,
+                    e.TotalPrice,
+                    e.Distance,
+                    e.Duration
+                ));
         }
         catch
         {

@@ -71,8 +71,9 @@ public class AhamoveService : IAhamoveService
                 response.StatusCode);
         }
 
-        return await response.Content.ReadFromJsonAsync<IEnumerable<AhamoveServiceEstimate>>(cancellationToken: ct)
-            ?? [];
+        var raw = await response.Content.ReadAsStringAsync(ct);
+        Console.WriteLine($"[Ahamove] estimate raw: {raw}");
+        return System.Text.Json.JsonSerializer.Deserialize<IEnumerable<AhamoveServiceEstimate>>(raw) ?? [];
     }
 
     // ─────────────────────────────────────────────

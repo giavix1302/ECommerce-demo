@@ -1,5 +1,6 @@
 using Application.Common.DTOs.Ahamove;
 using Application.Common.Exceptions;
+using Application.Common.Helpers;
 using Application.Common.Interfaces;
 using Application.Common.Services;
 using Application.Features.Shipping.Queries.GetShippingFee;
@@ -111,7 +112,12 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
         }
 
         // 8. Estimate shipping fee từ Ahamove
-        var shippingFee = await EstimateShippingFeeAsync(request, cancellationToken);
+        var bulkyTier = AhamoveBulkyTierHelper.GetTierFromItems(
+            cart.CartItems.Select(ci => (ci.Variant.WeightKg, ci.Variant.LengthCm, ci.Variant.WidthCm, ci.Variant.HeightCm, ci.Quantity))
+        );
+        if (bulkyTier.ExceedsLimit)
+            throw new BadRequestException("Order is too heavy or too large for motorbike delivery. Please contact us for alternative shipping.");
+        var shippingFee = await EstimateShippingFeeAsync(request, bulkyTier.Tier, cancellationToken);
 
         var totalAmount = baseAmount - rankDiscountAmount - couponDiscount + shippingFee;
 
@@ -218,7 +224,7 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
             // COD: tạo Shipment ngay sau khi commit
             if (request.PaymentMethod == PaymentMethod.COD)
             {
-                await CreateShipmentAsync(orderId, request, totalAmount, user, cancellationToken);
+                await CreateShipmentAsync(orderId, request, totalAmount, user, bulkyTier.Tier, cancellationToken);
                 return new CheckoutResult(orderId, PaymentLink: null);
             }
 
@@ -261,10 +267,14 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
         }
     }
 
-    private async Task<decimal> EstimateShippingFeeAsync(CheckoutCommand request, CancellationToken ct)
+    private async Task<decimal> EstimateShippingFeeAsync(CheckoutCommand request, string? bulkyTier, CancellationToken ct)
     {
         try
         {
+            var bulkyRequests = bulkyTier is not null
+                ? new List<AhamoveBulkyRequest> { new() { Id = $"{request.ServiceId}-BULKY", TierCode = bulkyTier } }
+                : new List<AhamoveBulkyRequest>();
+
             var estimateRequest = new AhamoveEstimateRequest
             {
                 Path =
@@ -286,7 +296,7 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
                         Mobile = string.Empty
                     }
                 ],
-                Services = [new AhamoveEstimateService { Id = request.ServiceId }]
+                Services = [new AhamoveEstimateService { Id = request.ServiceId, Requests = bulkyRequests }]
             };
 
             var estimates = await _ahamove.EstimateShippingFeeAsync(estimateRequest, ct);
@@ -299,14 +309,19 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
         }
     }
 
-    private async Task CreateShipmentAsync(long orderId, CheckoutCommand request, decimal totalAmount, User user, CancellationToken ct)
+    private async Task CreateShipmentAsync(long orderId, CheckoutCommand request, decimal totalAmount, User user, string? bulkyTier, CancellationToken ct)
     {
         try
         {
+            var bulkyRequests = bulkyTier is not null
+                ? [new AhamoveBulkyRequest { Id = $"{request.ServiceId}-BULKY", TierCode = bulkyTier }]
+                : new List<AhamoveBulkyRequest>();
+
             var createRequest = new AhamoveCreateOrderRequest
             {
                 ServiceId = request.ServiceId,
                 PaymentMethod = "CASH",
+                Requests = bulkyRequests,
                 Path =
                 [
                     new AhamoveOrderPath

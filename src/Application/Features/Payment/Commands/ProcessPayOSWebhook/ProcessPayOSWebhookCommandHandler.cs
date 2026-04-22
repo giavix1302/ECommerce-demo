@@ -1,5 +1,6 @@
 using Application.Common.DTOs.Ahamove;
 using Application.Common.Exceptions;
+using Application.Common.Helpers;
 using Application.Common.Interfaces;
 using Application.Features.Shipping.Queries.GetShippingFee;
 using Domain.Entities;
@@ -101,10 +102,19 @@ public class ProcessPayOSWebhookCommandHandler : IRequestHandler<ProcessPayOSWeb
         try
         {
             var user = order.User;
+
+            var bulkyTier = AhamoveBulkyTierHelper.GetTierFromItems(
+                order.OrderItems.Select(oi => (oi.Variant.WeightKg, oi.Variant.LengthCm, oi.Variant.WidthCm, oi.Variant.HeightCm, oi.Quantity))
+            );
+            var bulkyRequests = bulkyTier is not null
+                ? [new AhamoveBulkyRequest { Id = $"{order.ShippingServiceId}-BULKY", TierCode = bulkyTier }]
+                : new List<AhamoveBulkyRequest>();
+
             var createRequest = new AhamoveCreateOrderRequest
             {
                 ServiceId = order.ShippingServiceId,
                 PaymentMethod = "CASH",
+                Requests = bulkyRequests,
                 Path =
                 [
                     new AhamoveOrderPath
