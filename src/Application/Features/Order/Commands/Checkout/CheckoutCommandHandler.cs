@@ -358,6 +358,7 @@ public class CheckoutCommandHandler : IRequestHandler<CheckoutCommand, CheckoutR
         catch
         {
             // silent — order is already committed
+            throw new BadRequestException("Order created but failed to create shipment");
         }
     }
 }

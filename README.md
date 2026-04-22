@@ -41,6 +41,7 @@ Xây dựng backend cho một nền tảng thương mại điện tử hoàn ch�
 | **Vận chuyển** | Tra cứu phí ship, tích hợp Ahamove, xử lý webhook cập nhật trạng thái |
 | **Đánh giá**   | Khách hàng đánh giá sản phẩm sau mua hàng                             |
 | **Admin**      | Quản lý danh mục, coupon, khuyến mãi, biến thể qua API riêng          |
+| **Rate Limit** | Built-in .NET Rate Limiter + Redis, 4 policy theo cấp độ nhạy cảm     |
 
 ---
 
@@ -163,7 +164,6 @@ ecommerceApiDemo/
 | Thư viện              | Phiên bản | Mục đích           |
 | --------------------- | --------- | ------------------ |
 | MediatR               | 14.1      | CQRS mediator      |
-| AutoMapper            | 16.1      | Object mapping     |
 | FluentValidation      | 12.1      | Request validation |
 | Hangfire              | 1.8       | Background jobs    |
 | BCrypt.Net-Next       | 4.1       | Password hashing   |
@@ -252,6 +252,28 @@ Sau khi khởi động:
 
 > **Lưu ý:** Migration và seed data chạy tự động khi API khởi động lần đầu.
 
+#### Cấu hình webhook khi chạy local (ngrok)
+
+Khi chạy local, PayOS và Ahamove cần một URL công khai để gọi webhook về máy của bạn. Dùng **ngrok** để tạo tunnel:
+
+```bash
+# Cài ngrok nếu chưa có: https://ngrok.com/download
+ngrok http 5173
+```
+
+Ngrok sẽ in ra một URL dạng `https://xxxx-xx-xx-xx-xx.ngrok-free.app`. Dùng URL đó để cấu hình:
+
+| Dịch vụ    | Mục cần điền          | Giá trị                                                      |
+| ---------- | --------------------- | ------------------------------------------------------------ |
+| **PayOS**  | Webhook URL           | `https://<ngrok-url>/api/v1/payment/payos/webhook`           |
+| **Ahamove**| Webhook URL (Staging) | `https://<ngrok-url>/api/v1/shipping/webhook`                |
+
+**PayOS** — vào [PayOS Dashboard](https://business.payos.vn) → chọn kênh thanh toán → **Webhook** → dán URL vào ô *Webhook URL* → lưu lại.
+
+**Ahamove** — liên hệ Ahamove (staging) hoặc vào cổng quản lý để cấu hình webhook URL cho tài khoản của bạn.
+
+> URL ngrok thay đổi mỗi lần restart. Nhớ cập nhật lại webhook trên dashboard sau mỗi lần chạy ngrok mới (trừ khi dùng [ngrok static domain](https://ngrok.com/blog-post/free-static-domains-ngrok-users)).
+
 ---
 
 ### Cách 2 — Chạy thủ công (local)
@@ -286,6 +308,25 @@ Sau khi khởi động, API chạy tại:
 - HTTP: http://localhost:5173
 - HTTPS: https://localhost:7228
 - Swagger: http://localhost:5173/swagger
+
+#### Cấu hình webhook khi chạy local (ngrok)
+
+```bash
+ngrok http 5173
+```
+
+Lấy URL ngrok (`https://xxxx-xx-xx-xx-xx.ngrok-free.app`) rồi cấu hình trên dashboard của từng dịch vụ:
+
+| Dịch vụ    | Mục cần điền          | Giá trị                                                      |
+| ---------- | --------------------- | ------------------------------------------------------------ |
+| **PayOS**  | Webhook URL           | `https://<ngrok-url>/api/v1/payment/payos/webhook`           |
+| **Ahamove**| Webhook URL (Staging) | `https://<ngrok-url>/api/v1/shipping/webhook`                |
+
+**PayOS** — vào [PayOS Dashboard](https://business.payos.vn) → chọn kênh thanh toán → **Webhook** → dán URL → lưu.
+
+**Ahamove** — vào cổng quản lý staging và cấu hình webhook URL cho tài khoản của bạn.
+
+> URL ngrok thay đổi mỗi lần restart. Nhớ cập nhật lại sau mỗi lần chạy ngrok mới.
 
 ---
 

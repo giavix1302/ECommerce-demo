@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
 using API.Middleware;
+using API.RateLimit;
 using Application.Common.Interfaces;
 using Application.Extensions;
 using Hangfire;
@@ -18,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 // --- Services ---
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddRateLimiting(builder.Configuration);
 
 builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -130,6 +132,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.UseHangfireDashboard("/hangfire");

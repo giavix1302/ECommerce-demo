@@ -1,4 +1,5 @@
 using API.Common;
+using API.RateLimit;
 using Application.Common.Models;
 using Application.Features.Products.Commands.CreateProduct;
 using Application.Features.Products.Commands.DeleteProduct;
@@ -8,6 +9,7 @@ using Application.Features.Products.Queries.GetProducts;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 
@@ -23,6 +25,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -33,6 +36,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [EnableRateLimiting(RateLimitPolicy.Read)]
     public async Task<IActionResult> GetById([FromRoute] long id)
     {
         var result = await _mediator.Send(new GetProductByIdQuery(id));
@@ -41,6 +45,7 @@ public class ProductsController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = "AdminOnly")]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand? command)
     {
         if (command is null)
@@ -52,6 +57,7 @@ public class ProductsController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Policy = "AdminOnly")]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Update([FromRoute] long id, [FromBody] UpdateProductCommand? command)
     {
         if (command is null)
@@ -66,6 +72,7 @@ public class ProductsController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Policy = "AdminOnly")]
+    [EnableRateLimiting(RateLimitPolicy.Write)]
     public async Task<IActionResult> Delete([FromRoute] long id)
     {
         await _mediator.Send(new DeleteProductCommand(id));
