@@ -1,3 +1,4 @@
+using System.Data;
 using FluentValidation;
 
 namespace Application.Features.Products.Commands.CreateProduct;
@@ -9,6 +10,9 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Product name is required.")
             .MaximumLength(200).WithMessage("Product name must not exceed 200 characters.");
+
+        RuleFor(x => x.CategoryId)
+            .NotEmpty().WithMessage("Category ID is required.");
 
         RuleFor(x => x.Variants)
             .NotEmpty().WithMessage("At least one product variant is required.")

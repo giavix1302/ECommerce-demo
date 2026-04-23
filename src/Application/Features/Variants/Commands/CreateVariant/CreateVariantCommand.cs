@@ -8,6 +8,10 @@ public record CreateVariantCommand(
     decimal Price,
     int StockQuantity,
     bool IsDefault,
+    float? WeightKg,
+    float? LengthCm,
+    float? WidthCm,
+    float? HeightCm,
     IEnumerable<CreateVariantAttributeDto> Attributes
 ) : IRequest<CreateVariantResult>;
 

@@ -34,6 +34,10 @@ public class CreateVariantCommandHandler : IRequestHandler<CreateVariantCommand,
             Price = request.Price,
             StockQuantity = request.StockQuantity,
             IsDefault = request.IsDefault,
+            WeightKg = request.WeightKg,
+            LengthCm = request.LengthCm,
+            WidthCm = request.WidthCm,
+            HeightCm = request.HeightCm,
             AttributeValues = request.Attributes.Select(a => new VariantAttributeValue
             {
                 AttributeId = a.AttributeId,

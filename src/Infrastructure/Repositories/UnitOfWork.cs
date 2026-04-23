@@ -12,6 +12,8 @@ public class UnitOfWork : IUnitOfWork
     public IUserRepository Users { get; }
     public IProductRepository Products { get; }
     public IVariantRepository Variants { get; }
+    public IProductAttributeRepository ProductAttributes { get; }
+    public IVariantAttributeValueRepository VariantAttributeValues { get; }
     public ICategoryRepository Categories { get; }
     public ICartRepository Carts { get; }
     public IOrderRepository Orders { get; }
@@ -27,6 +29,8 @@ public class UnitOfWork : IUnitOfWork
         Users = new UserRepository(context);
         Products = new ProductRepository(context);
         Variants = new VariantRepository(context);
+        ProductAttributes = new ProductAttributeRepository(context);
+        VariantAttributeValues = new VariantAttributeValueRepository(context);
         Categories = new CategoryRepository(context);
         Carts = new CartRepository(context);
         Orders = new OrderRepository(context);

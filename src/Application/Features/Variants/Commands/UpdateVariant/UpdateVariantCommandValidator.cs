@@ -13,7 +13,18 @@ public class UpdateVariantCommandValidator : AbstractValidator<UpdateVariantComm
             .GreaterThanOrEqualTo(0).WithMessage("Stock quantity cannot be negative.");
 
         RuleFor(x => x.Sku)
-            .MaximumLength(100).WithMessage("SKU must not exceed 100 characters.")
-            .When(x => x.Sku is not null);
+            .NotEmpty().WithMessage("SKU is required.")
+            .MaximumLength(100).WithMessage("SKU must not exceed 100 characters.");
+
+        RuleForEach(x => x.Attributes)
+            .ChildRules(attr =>
+            {
+                attr.RuleFor(a => a.AttributeName)
+                    .NotEmpty().WithMessage("Attribute name is required.")
+                    .MaximumLength(100).WithMessage("Attribute name must not exceed 100 characters.");
+                attr.RuleFor(a => a.Value)
+                    .NotEmpty().WithMessage("Attribute value is required.");
+            })
+            .When(x => x.Attributes is not null);
     }
 }

@@ -5,6 +5,8 @@ public interface IUnitOfWork : IDisposable
     IUserRepository Users { get; }
     IProductRepository Products { get; }
     IVariantRepository Variants { get; }
+    IProductAttributeRepository ProductAttributes { get; }
+    IVariantAttributeValueRepository VariantAttributeValues { get; }
     ICategoryRepository Categories { get; }
     ICartRepository Carts { get; }
     IOrderRepository Orders { get; }
