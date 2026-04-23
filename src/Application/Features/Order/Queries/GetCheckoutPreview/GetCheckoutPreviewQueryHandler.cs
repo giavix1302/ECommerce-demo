@@ -181,9 +181,23 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
     {
         try
         {
-            var bulkyRequests = bulkyTier is not null
-                ? new List<AhamoveBulkyRequest> { new() { Id = "SGN-BIKE-BULKY", TierCode = bulkyTier } }
-                : new List<AhamoveBulkyRequest>();
+            List<AhamoveEstimateService> services =
+            [
+                new AhamoveEstimateService
+                {
+                    Id = "SGN-BIKE",
+                    Requests = bulkyTier is not null
+                        ? [new AhamoveBulkyRequest { Id = "SGN-BIKE-BULKY", TierCode = bulkyTier }]
+                        : []
+                },
+                new AhamoveEstimateService
+                {
+                    Id = "SGN-EXPRESS",
+                    Requests = bulkyTier is not null
+                        ? [new AhamoveBulkyRequest { Id = "SGN-EXPRESS-BULKY", TierCode = bulkyTier }]
+                        : []
+                }
+            ];
 
             var estimateRequest = new AhamoveEstimateRequest
             {
@@ -206,11 +220,7 @@ public class GetCheckoutPreviewQueryHandler : IRequestHandler<GetCheckoutPreview
                         Mobile = string.Empty
                     }
                 ],
-                Services =
-                [
-                    new AhamoveEstimateService { Id = "SGN-BIKE", Requests = bulkyRequests },
-                    new AhamoveEstimateService { Id = "SGN-EXPRESS", Requests = bulkyRequests }
-                ]
+                Services = services
             };
 
             var estimates = await _ahamove.EstimateShippingFeeAsync(estimateRequest, ct);

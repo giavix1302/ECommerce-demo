@@ -107,7 +107,7 @@ public class ProcessPayOSWebhookCommandHandler : IRequestHandler<ProcessPayOSWeb
                 order.OrderItems.Select(oi => (oi.Variant.WeightKg, oi.Variant.LengthCm, oi.Variant.WidthCm, oi.Variant.HeightCm, oi.Quantity))
             );
             var bulkyRequests = bulkyTier is not null
-                ? [new AhamoveBulkyRequest { Id = $"{order.ShippingServiceId}-BULKY", TierCode = bulkyTier }]
+                ? [new AhamoveBulkyRequest { Id = $"{order.ShippingServiceId}-BULKY", TierCode = bulkyTier.Tier }]
                 : new List<AhamoveBulkyRequest>();
 
             var createRequest = new AhamoveCreateOrderRequest
